@@ -7,6 +7,7 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { Actions } from './pages/admin/Actions';
 import { StudentFunds } from './pages/admin/StudentFunds';
 import { ClassFunds } from './pages/admin/ClassFunds';
+import { SpecialFunds } from './pages/admin/SpecialFunds';
 import { Reports } from './pages/student/Reports';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -68,6 +69,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/admin/special-fund" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout><SpecialFunds /></Layout>
+          </ProtectedRoute>
+        } 
+      />
 
       {/* Student/Shared Routes */}
       <Route 
@@ -87,7 +96,7 @@ const App: React.FC = () => {
     <FinanceProvider>
       <HashRouter>
         <AppRoutes />
-        <SpeedInsights />  {/* <--- INSERT THIS LINE HERE */}
+        <SpeedInsights />
       </HashRouter>
     </FinanceProvider>
   );

@@ -18,8 +18,9 @@ export const StudentFunds: React.FC = () => {
     e.preventDefault();
     if (!studentId || !amount) return;
     
+    // IMPORTANT: Do not cast studentId to Number, keep as string for Mongo
     await addTransaction(
-      Number(studentId),
+      studentId,
       'student',
       Number(amount),
       type,
@@ -27,7 +28,6 @@ export const StudentFunds: React.FC = () => {
       reason
     );
 
-    // Reset critical fields
     setAmount('');
     setReason('');
   };
@@ -148,7 +148,8 @@ export const StudentFunds: React.FC = () => {
               <p className="text-slate-400 text-sm text-center py-4">No transactions yet.</p>
             )}
             {recentStudentTransactions.map(t => {
-              const student = students.find(s => s.id === t.entityId);
+              // Find student by ID (robust check for string vs number)
+              const student = students.find(s => String(s.id) === String(t.entityId) || s._id === t.entityId);
               return (
                 <div key={t.id} className="flex gap-3 pb-3 border-b border-slate-50 last:border-0">
                   <div className={`mt-1 ${t.type === 'deposit' ? 'text-emerald-500' : 'text-red-500'}`}>

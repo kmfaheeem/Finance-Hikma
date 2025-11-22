@@ -4,8 +4,8 @@ import { Card } from '../../components/ui/Card';
 import { Printer } from 'lucide-react';
 
 export const Reports: React.FC = () => {
-  const { transactions, students, classes, currentUser, formatCurrency } = useFinance();
-  const [reportType, setReportType] = useState<'student' | 'class'>('student');
+  const { transactions, students, classes, specialFunds, currentUser, formatCurrency } = useFinance();
+  const [reportType, setReportType] = useState<'student' | 'class' | 'special'>('student');
   const [filterId, setFilterId] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState('');
 
@@ -24,7 +24,7 @@ export const Reports: React.FC = () => {
             data = [];
          }
        } else {
-         // Students can see all class funds (public transparency)
+         // Students can see all class and special funds (public transparency)
        }
     } else {
         // Admin filters
@@ -41,10 +41,17 @@ export const Reports: React.FC = () => {
   }, [transactions, reportType, filterId, dateFilter, currentUser, students]);
 
   const getEntityName = (id: number | string) => {
+    const idStr = String(id);
     if (reportType === 'student') {
-      return students.find(s => String(s.id) === String(id) || s._id === String(id))?.name || 'Unknown';
+      return students.find(s => String(s.id) === idStr || s._id === idStr)?.name || 'Unknown';
     }
-    return classes.find(c => String(c.id) === String(id) || c._id === String(id))?.name || 'Unknown';
+    if (reportType === 'class') {
+      return classes.find(c => String(c.id) === idStr || c._id === idStr)?.name || 'Unknown';
+    }
+    if (reportType === 'special') {
+      return specialFunds.find(f => String(f.id) === idStr || f._id === idStr)?.name || 'Unknown';
+    }
+    return 'Unknown';
   };
 
   const totalAmount = filteredTransactions.reduce((acc, t) => {
@@ -82,31 +89,31 @@ export const Reports: React.FC = () => {
               <select 
                 value={reportType}
                 onChange={(e) => {
-                  setReportType(e.target.value as 'student' | 'class');
+                  setReportType(e.target.value as 'student' | 'class' | 'special');
                   setFilterId('all');
                 }}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="student">Students Fund Report</option>
                 <option value="class">Class Fund Report</option>
+                <option value="special">Special Fund Report</option>
               </select>
             </div>
 
             {currentUser?.role === 'admin' && (
                 <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                    Filter by {reportType === 'student' ? 'Student' : 'Class'}
+                    Filter by Entity
                 </label>
                 <select 
                     value={filterId}
                     onChange={(e) => setFilterId(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                    <option value="all">All {reportType === 'student' ? 'Students' : 'Classes'}</option>
-                    {reportType === 'student' 
-                    ? students.map(s => <option key={s.id} value={String(s.id)}>{s.name}</option>)
-                    : classes.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)
-                    }
+                    <option value="all">All</option>
+                    {reportType === 'student' && students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {reportType === 'class' && classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {reportType === 'special' && specialFunds.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
                 </div>
             )}

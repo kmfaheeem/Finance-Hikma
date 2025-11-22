@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { FinanceContextType, Student, ClassEntity, Transaction, User, TransactionType, Admin } from '../types';
+import { FinanceContextType, Student, ClassEntity, SpecialFund, Transaction, User, TransactionType, Admin } from '../types';
 import { INITIAL_ADMINS, INITIAL_CLASSES, INITIAL_STUDENTS, INITIAL_TRANSACTIONS } from '../services/mockData';
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -8,17 +8,22 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
 
+const USER_STORAGE_KEY = 'hikma_finance_user';
+
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Initialize currentUser from localStorage to persist login across refreshes
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
   const [admins, setAdmins] = useState<Admin[]>(INITIAL_ADMINS);
   const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
   const [classes, setClasses] = useState<ClassEntity[]>(INITIAL_CLASSES);
+  const [specialFunds, setSpecialFunds] = useState<SpecialFund[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Helper to check if backend is available
-  const [isBackendConnected, setIsBackendConnected] = useState(false);
-
   const refreshData = async () => {
     try {
       const res = await fetch(`${API_URL}/data`);
@@ -30,9 +35,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAdmins(data.admins.map(normalize));
       setStudents(data.students.map(normalize));
       setClasses(data.classes.map(normalize));
+      setSpecialFunds(data.specialFunds ? data.specialFunds.map(normalize) : []);
       setTransactions(data.transactions.map(normalize));
       
-      setIsBackendConnected(true);
     } catch (error) {
       // console.warn("Backend not connected, using local data");
     }
@@ -47,7 +52,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const login = async (username: string, pass: string): Promise<boolean> => {
@@ -63,6 +68,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const data = await res.json();
         if (data.success) {
           setCurrentUser(data.user);
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user)); // Save to storage
           await refreshData();
           setIsLoading(false);
           return true;
@@ -74,14 +80,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const admin = admins.find(a => a.username === username && a.password === pass);
     if (admin) {
-      setCurrentUser({ ...admin, id: String(admin.id), role: 'admin' });
+      const userObj: User = { ...admin, id: String(admin.id), role: 'admin' };
+      setCurrentUser(userObj);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userObj)); // Save to storage
       setIsLoading(false);
       return true;
     }
 
     const student = students.find(s => s.username === username && s.password === pass);
     if (student) {
-      setCurrentUser({ ...student, id: String(student.id), role: 'student' });
+      const userObj: User = { ...student, id: String(student.id), role: 'student' };
+      setCurrentUser(userObj);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userObj)); // Save to storage
       setIsLoading(false);
       return true;
     }
@@ -91,6 +101,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const logout = () => {
+    localStorage.removeItem(USER_STORAGE_KEY); // Clear from storage
     setCurrentUser(null);
   };
 
@@ -276,10 +287,44 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  // --- Special Fund Management ---
+  const addSpecialFund = async (name: string, description: string) => {
+    await executeAction(
+      async () => {
+        const res = await fetch(`${API_URL}/special-funds`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description })
+        });
+        if(!res.ok) throw new Error("Failed to add special fund");
+      },
+      () => {
+        const newFund: SpecialFund = {
+          id: Date.now(),
+          name, description, accountBalance: 0, createdAt: new Date().toISOString()
+        };
+        setSpecialFunds([...specialFunds, newFund]);
+      }
+    );
+  };
+
+  const deleteSpecialFund = async (id: number | string) => {
+    await executeAction(
+      async () => {
+        const res = await fetch(`${API_URL}/special-funds/${id}`, { method: 'DELETE' });
+        if(!res.ok) throw new Error("Failed to delete special fund");
+      },
+      () => {
+        setSpecialFunds(specialFunds.filter(f => String(f.id) !== String(id) && f._id !== id));
+      }
+    );
+  };
+
+
   // --- Transactions ---
   const addTransaction = async (
     entityId: number | string,
-    entityType: 'student' | 'class',
+    entityType: 'student' | 'class' | 'special',
     amount: number,
     type: TransactionType,
     date: string,
@@ -301,22 +346,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
         setTransactions([newTx, ...transactions]);
 
+        const updateEntityBalance = (entities: any[]) => {
+          return entities.map(e => {
+            if (String(e.id) === String(entityId) || e._id === entityId) {
+              const newBal = type === 'deposit' ? e.accountBalance + amount : e.accountBalance - amount;
+              return { ...e, accountBalance: newBal };
+            }
+            return e;
+          });
+        };
+
         if (entityType === 'student') {
-          setStudents(students.map(s => {
-            if (String(s.id) === String(entityId) || s._id === entityId) {
-              const newBal = type === 'deposit' ? s.accountBalance + amount : s.accountBalance - amount;
-              return { ...s, accountBalance: newBal };
-            }
-            return s;
-          }));
-        } else {
-          setClasses(classes.map(c => {
-            if (String(c.id) === String(entityId) || c._id === entityId) {
-              const newBal = type === 'deposit' ? c.accountBalance + amount : c.accountBalance - amount;
-              return { ...c, accountBalance: newBal };
-            }
-            return c;
-          }));
+          setStudents(updateEntityBalance(students));
+        } else if (entityType === 'class') {
+          setClasses(updateEntityBalance(classes));
+        } else if (entityType === 'special') {
+          setSpecialFunds(updateEntityBalance(specialFunds));
         }
       }
     );
@@ -329,6 +374,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         admins,
         students,
         classes,
+        specialFunds,
         transactions,
         isLoading,
         login,
@@ -343,6 +389,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteStudent,
         addClass,
         deleteClass,
+        addSpecialFund,
+        deleteSpecialFund,
         addTransaction,
         formatCurrency
       }}

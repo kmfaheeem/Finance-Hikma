@@ -1,4 +1,3 @@
-// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -27,7 +26,6 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => {
       console.error('MongoDB Connection Error:', err);
-      console.log('Current Connection String:', MONGO_URI);
   });
 
 // --- SCHEMAS ---
@@ -53,11 +51,19 @@ const ClassSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// NEW: Special Fund Schema
+const SpecialFundSchema = new mongoose.Schema({
+  name: String,
+  description: String,
+  accountBalance: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const TransactionSchema = new mongoose.Schema({
   entityId: String, 
-  entityType: String, 
+  entityType: String, // 'student', 'class', 'special'
   amount: Number,
-  type: String, 
+  type: String, // 'deposit', 'withdrawal'
   date: String,
   reason: String,
   createdAt: { type: Date, default: Date.now }
@@ -66,11 +72,12 @@ const TransactionSchema = new mongoose.Schema({
 const Admin = mongoose.model('Admin', AdminSchema);
 const Student = mongoose.model('Student', StudentSchema);
 const Class = mongoose.model('Class', ClassSchema);
+const SpecialFund = mongoose.model('SpecialFund', SpecialFundSchema);
 const Transaction = mongoose.model('Transaction', TransactionSchema);
 
 // --- ROUTES ---
 
-// 1. Initialization (Seed Data)
+// 1. Initialization
 app.post('/api/seed', async (req, res) => {
   const adminCount = await Admin.countDocuments();
   if (adminCount === 0) {
@@ -79,18 +86,6 @@ app.post('/api/seed', async (req, res) => {
       { name: 'Admin Two', username: 'admin2', password: 'admin223' }
     ]);
   }
-  
-  const studentCount = await Student.countDocuments();
-  if (studentCount === 0) {
-    const students = Array.from({ length: 30 }).map((_, i) => ({
-      name: `Student ${i + 1}`,
-      username: `student${i + 1}`,
-      password: `password${i + 1}`,
-      accountBalance: 0
-    }));
-    await Student.insertMany(students);
-  }
-
   res.json({ message: 'Database seeded successfully' });
 });
 
@@ -123,96 +118,78 @@ app.get('/api/data', async (req, res) => {
     const admins = await Admin.find();
     const students = await Student.find();
     const classes = await Class.find();
+    const specialFunds = await SpecialFund.find();
     const transactions = await Transaction.find().sort({ createdAt: -1 });
-    res.json({ admins, students, classes, transactions });
+    res.json({ admins, students, classes, specialFunds, transactions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4. Management Routes (CRUD)
+// 4. CRUD Routes
 
-// Add Student
+// Students
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
     await newStudent.save();
     res.json(newStudent);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Update Student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Delete Student - FIX: Added try/catch
 app.delete('/api/students/:id', async (req, res) => {
-  try {
-    await Student.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  try { await Student.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Add Class
+// Classes
 app.post('/api/classes', async (req, res) => {
   try {
     const newClass = new Class(req.body);
     await newClass.save();
     res.json(newClass);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Delete Class - FIX: Added try/catch
 app.delete('/api/classes/:id', async (req, res) => {
-  try {
-    await Class.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  try { await Class.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Add Admin
+// Special Funds
+app.post('/api/special-funds', async (req, res) => {
+  try {
+    const newFund = new SpecialFund(req.body);
+    await newFund.save();
+    res.json(newFund);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+app.delete('/api/special-funds/:id', async (req, res) => {
+  try { await SpecialFund.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admins
 app.post('/api/admins', async (req, res) => {
   try {
     const newAdmin = new Admin(req.body);
     await newAdmin.save();
     res.json(newAdmin);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Update Admin
 app.put('/api/admins/:id', async (req, res) => {
   try {
     const updated = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Delete Admin - FIX: Added try/catch
 app.delete('/api/admins/:id', async (req, res) => {
-  try {
-    await Admin.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  try { await Admin.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // 5. Transactions
@@ -234,13 +211,21 @@ app.post('/api/transactions', async (req, res) => {
           : student.accountBalance - numAmount;
         await student.save();
       }
-    } else {
+    } else if (entityType === 'class') {
       const classEntity = await Class.findById(entityId);
       if (classEntity) {
         classEntity.accountBalance = type === 'deposit' 
           ? classEntity.accountBalance + numAmount 
           : classEntity.accountBalance - numAmount;
         await classEntity.save();
+      }
+    } else if (entityType === 'special') {
+      const specialFund = await SpecialFund.findById(entityId);
+      if (specialFund) {
+        specialFund.accountBalance = type === 'deposit' 
+          ? specialFund.accountBalance + numAmount 
+          : specialFund.accountBalance - numAmount;
+        await specialFund.save();
       }
     }
 

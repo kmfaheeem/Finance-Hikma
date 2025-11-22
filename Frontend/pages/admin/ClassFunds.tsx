@@ -19,7 +19,7 @@ export const ClassFunds: React.FC = () => {
     if (!classId || !amount) return;
     
     await addTransaction(
-      Number(classId),
+      classId,
       'class',
       Number(amount),
       type,
@@ -147,7 +147,7 @@ export const ClassFunds: React.FC = () => {
               <p className="text-slate-400 text-sm text-center py-4">No transactions yet.</p>
             )}
             {recentClassTransactions.map(t => {
-              const cls = classes.find(c => c.id === t.entityId);
+              const cls = classes.find(c => String(c.id) === String(t.entityId) || c._id === t.entityId);
               return (
                 <div key={t.id} className="flex gap-3 pb-3 border-b border-slate-50 last:border-0">
                   <div className={`mt-1 ${t.type === 'deposit' ? 'text-emerald-500' : 'text-red-500'}`}>
