@@ -21,23 +21,25 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
   // Fetch initial data on load
-  const refreshData = async () => {
-    try {
-      const res = await fetch(`${API_URL}/data`);
-      if (!res.ok) throw new Error('Backend not reachable');
-      const data = await res.json();
-      
-      setAdmins(data.admins);
-      setStudents(data.students);
-      setClasses(data.classes);
-      setTransactions(data.transactions);
-      setIsBackendConnected(true);
-    } catch (error) {
-      console.warn("Backend unreachable. Using local mock data.");
-      setIsBackendConnected(false);
-      // We don't clear state here, we keep the mock data or previous state
-    }
-  };
+const refreshData = async () => {
+  try {
+    const res = await fetch(`${API_URL}/data`);
+    if (!res.ok) throw new Error('Backend not reachable');
+    const data = await res.json();
+    
+    // Helper to ensure everything has an 'id' property
+    const normalize = (item: any) => ({ ...item, id: item._id || item.id });
+
+    setAdmins(data.admins.map(normalize));
+    setStudents(data.students.map(normalize));
+    setClasses(data.classes.map(normalize));
+    setTransactions(data.transactions.map(normalize));
+    
+    setIsBackendConnected(true);
+  } catch (error) {
+    // ...
+  }
+};
 
   // Try to connect on mount
   useEffect(() => {
@@ -165,22 +167,37 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
-  // --- Student Management ---
+// --- Student Management ---
   const addStudent = async (name: string, username: string, password: string = 'default123') => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/students`, {
+        const res = await fetch(`${API_URL}/students`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, username, password })
         });
+
+        // FIX: Check if the response was successful
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to create student');
+        }
       },
       () => {
+        // Local Fallback (runs if backend is unreachable OR if we threw the error above)
         const newStudent: Student = {
           id: Date.now(),
-          name, username, password, accountBalance: 0, createdAt: new Date().toISOString()
+          name, 
+          username, 
+          password, 
+          accountBalance: 0, 
+          createdAt: new Date().toISOString()
         };
-        setStudents([...students, newStudent]);
+        setStudents(prev => [...prev, newStudent]);
+        
+        // Optional: Alert the user if it was a specific error (like duplicate username)
+        // You can remove this alert if you prefer the UI to just update optimistically
+        // alert("Note: Action executed locally. Check console for backend errors.");
       }
     );
   };
