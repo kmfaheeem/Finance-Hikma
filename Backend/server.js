@@ -153,69 +153,101 @@ app.put('/api/students/:id', async (req, res) => {
   }
 });
 
-// Delete Student
+// Delete Student - FIX: Added try/catch
 app.delete('/api/students/:id', async (req, res) => {
-  await Student.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try {
+    await Student.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Add Class
 app.post('/api/classes', async (req, res) => {
-  const newClass = new Class(req.body);
-  await newClass.save();
-  res.json(newClass);
+  try {
+    const newClass = new Class(req.body);
+    await newClass.save();
+    res.json(newClass);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// Delete Class
+// Delete Class - FIX: Added try/catch
 app.delete('/api/classes/:id', async (req, res) => {
-  await Class.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try {
+    await Class.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Add Admin
 app.post('/api/admins', async (req, res) => {
-  const newAdmin = new Admin(req.body);
-  await newAdmin.save();
-  res.json(newAdmin);
+  try {
+    const newAdmin = new Admin(req.body);
+    await newAdmin.save();
+    res.json(newAdmin);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Update Admin
 app.put('/api/admins/:id', async (req, res) => {
-  const updated = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(updated);
+  try {
+    const updated = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// Delete Admin (NEW)
+// Delete Admin - FIX: Added try/catch
 app.delete('/api/admins/:id', async (req, res) => {
-  await Admin.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try {
+    await Admin.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 5. Transactions
 app.post('/api/transactions', async (req, res) => {
-  const { entityId, entityType, amount, type, date, reason } = req.body;
-  const numAmount = Number(amount);
+  try {
+    const { entityId, entityType, amount, type, date, reason } = req.body;
+    const numAmount = Number(amount);
 
-  const transaction = new Transaction({
-    entityId, entityType, amount: numAmount, type, date, reason
-  });
-  await transaction.save();
+    const transaction = new Transaction({
+      entityId, entityType, amount: numAmount, type, date, reason
+    });
+    await transaction.save();
 
-  if (entityType === 'student') {
-    const student = await Student.findById(entityId);
-    student.accountBalance = type === 'deposit' 
-      ? student.accountBalance + numAmount 
-      : student.accountBalance - numAmount;
-    await student.save();
-  } else {
-    const classEntity = await Class.findById(entityId);
-    classEntity.accountBalance = type === 'deposit' 
-      ? classEntity.accountBalance + numAmount 
-      : classEntity.accountBalance - numAmount;
-    await classEntity.save();
+    if (entityType === 'student') {
+      const student = await Student.findById(entityId);
+      if (student) {
+        student.accountBalance = type === 'deposit' 
+          ? student.accountBalance + numAmount 
+          : student.accountBalance - numAmount;
+        await student.save();
+      }
+    } else {
+      const classEntity = await Class.findById(entityId);
+      if (classEntity) {
+        classEntity.accountBalance = type === 'deposit' 
+          ? classEntity.accountBalance + numAmount 
+          : classEntity.accountBalance - numAmount;
+        await classEntity.save();
+      }
+    }
+
+    res.json(transaction);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  res.json(transaction);
 });
 
 app.listen(PORT, () => {

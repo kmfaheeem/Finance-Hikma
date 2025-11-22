@@ -15,26 +15,28 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [classes, setClasses] = useState<ClassEntity[]>(INITIAL_CLASSES);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Helper to check if backend is available
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
-const refreshData = async () => {
-  try {
-    const res = await fetch(`${API_URL}/data`);
-    if (!res.ok) throw new Error('Backend not reachable');
-    const data = await res.json();
-    
-    const normalize = (item: any) => ({ ...item, id: item._id || item.id });
+  const refreshData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/data`);
+      if (!res.ok) throw new Error('Backend not reachable');
+      const data = await res.json();
+      
+      const normalize = (item: any) => ({ ...item, id: item._id || item.id });
 
-    setAdmins(data.admins.map(normalize));
-    setStudents(data.students.map(normalize));
-    setClasses(data.classes.map(normalize));
-    setTransactions(data.transactions.map(normalize));
-    
-    setIsBackendConnected(true);
-  } catch (error) {
-    // ...
-  }
-};
+      setAdmins(data.admins.map(normalize));
+      setStudents(data.students.map(normalize));
+      setClasses(data.classes.map(normalize));
+      setTransactions(data.transactions.map(normalize));
+      
+      setIsBackendConnected(true);
+    } catch (error) {
+      // console.warn("Backend not connected, using local data");
+    }
+  };
 
   useEffect(() => {
     refreshData();
@@ -101,7 +103,7 @@ const refreshData = async () => {
       await apiCall();
       await refreshData(); 
     } catch (e) {
-      console.warn("Action failed on backend, executing locally.");
+      console.warn("Action failed on backend or backend unreachable, executing locally.", e);
       localFallback(); 
     }
     setIsLoading(false);
@@ -111,11 +113,12 @@ const refreshData = async () => {
   const addAdmin = async (name: string, username: string, password: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/admins`, {
+        const res = await fetch(`${API_URL}/admins`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, username, password, role: 'admin' })
         });
+        if(!res.ok) throw new Error("Failed to add admin");
       },
       () => {
         const newAdmin: Admin = {
@@ -130,11 +133,12 @@ const refreshData = async () => {
   const updateAdminPassword = async (id: number | string, newPassword: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/admins/${id}`, {
+        const res = await fetch(`${API_URL}/admins/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: newPassword })
         });
+        if(!res.ok) throw new Error("Failed to update admin password");
       },
       () => {
         setAdmins(admins.map(a => (String(a.id) === String(id) || a._id === id) ? { ...a, password: newPassword } : a));
@@ -145,11 +149,12 @@ const refreshData = async () => {
   const updateAdminUsername = async (id: number | string, newUsername: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/admins/${id}`, {
+        const res = await fetch(`${API_URL}/admins/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: newUsername })
         });
+        if(!res.ok) throw new Error("Failed to update admin username");
       },
       () => {
         setAdmins(admins.map(a => (String(a.id) === String(id) || a._id === id) ? { ...a, username: newUsername } : a));
@@ -157,11 +162,11 @@ const refreshData = async () => {
     );
   };
 
-  // NEW: Delete Admin Function
   const deleteAdmin = async (id: number | string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/admins/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/admins/${id}`, { method: 'DELETE' });
+        if(!res.ok) throw new Error("Failed to delete admin");
       },
       () => {
         setAdmins(admins.filter(a => String(a.id) !== String(id) && a._id !== id));
@@ -178,11 +183,7 @@ const refreshData = async () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, username, password })
         });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to create student');
-        }
+        if (!res.ok) throw new Error('Failed to create student');
       },
       () => {
         const newStudent: Student = {
@@ -201,11 +202,12 @@ const refreshData = async () => {
   const updateStudentPassword = async (id: number | string, newPassword: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/students/${id}`, {
+        const res = await fetch(`${API_URL}/students/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: newPassword })
         });
+        if(!res.ok) throw new Error("Failed to update student password");
       },
       () => {
         setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, password: newPassword } : s));
@@ -216,11 +218,12 @@ const refreshData = async () => {
   const updateStudentUsername = async (id: number | string, newUsername: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/students/${id}`, {
+        const res = await fetch(`${API_URL}/students/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: newUsername })
         });
+        if(!res.ok) throw new Error("Failed to update student username");
       },
       () => {
         setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, username: newUsername } : s));
@@ -231,7 +234,8 @@ const refreshData = async () => {
   const deleteStudent = async (id: number | string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
+        if(!res.ok) throw new Error("Failed to delete student");
       },
       () => {
         setStudents(students.filter(s => String(s.id) !== String(id) && s._id !== id));
@@ -243,11 +247,12 @@ const refreshData = async () => {
   const addClass = async (name: string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/classes`, {
+        const res = await fetch(`${API_URL}/classes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name })
         });
+        if(!res.ok) throw new Error("Failed to add class");
       },
       () => {
         const newClass: ClassEntity = {
@@ -262,7 +267,8 @@ const refreshData = async () => {
   const deleteClass = async (id: number | string) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/classes/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/classes/${id}`, { method: 'DELETE' });
+        if(!res.ok) throw new Error("Failed to delete class");
       },
       () => {
         setClasses(classes.filter(c => String(c.id) !== String(id) && c._id !== id));
@@ -281,11 +287,12 @@ const refreshData = async () => {
   ) => {
     await executeAction(
       async () => {
-        await fetch(`${API_URL}/transactions`, {
+        const res = await fetch(`${API_URL}/transactions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entityId, entityType, amount, type, date, reason })
         });
+        if(!res.ok) throw new Error("Failed to add transaction");
       },
       () => {
         const newTx: Transaction = {
@@ -329,7 +336,7 @@ const refreshData = async () => {
         addAdmin,
         updateAdminPassword,
         updateAdminUsername,
-        deleteAdmin, // <--- Ensured this is here
+        deleteAdmin,
         addStudent,
         updateStudentPassword,
         updateStudentUsername,
