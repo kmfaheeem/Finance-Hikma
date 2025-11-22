@@ -6,7 +6,9 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 // API URL - Change this if hosting elsewhere
 // Checks if there is a hidden environment variable, otherwise defaults to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// NEW (Force /api if missing):
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
