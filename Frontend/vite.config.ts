@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Hikma-Finance',
         short_name: 'Hikma',
         description: 'Secure Financial Management System',
-        theme_color: '#2563eb', // Matches your blue-600
-        background_color: '#f8fafc', // Matches your slate-50
+        theme_color: '#2563eb',
+        background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -37,4 +37,24 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            // Logic to split code for better performance
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('lucide-react') || id.includes('recharts')) {
+              return 'vendor-ui';
+            }
+            // All other libraries go here
+            return 'vendor-others';
+          }
+        }
+      }
+    }
+  }
 });
