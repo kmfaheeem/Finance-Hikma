@@ -1,38 +1,39 @@
-// backend/server.js
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
-// Allow requests from your local frontend AND your future Vercel domain
 app.use(cors({
   origin: [
-    "http://localhost:5173", 
-    "https://hikma-finance.vercel.app" // You will get this URL later from Vercel
+    "http://localhost:5173",
+    "https://hikma-finance.vercel.app" 
   ],
   credentials: true
 }));
 app.use(bodyParser.json());
 
 // MongoDB Connection
-// REPLACE THIS STRING WITH YOUR MONGODB ATLAS CONNECTION STRING
-const MONGO_URI = "mongodb+srv://finance:finance@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://finance:finance@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
+
+console.log("Connecting to MongoDB...");
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+  .catch(err => {
+      console.error('MongoDB Connection Error:', err);
+  });
 
 // --- SCHEMAS ---
 
 const AdminSchema = new mongoose.Schema({
   name: String,
   username: { type: String, unique: true },
-  password: String, // Note: In production, use bcrypt to hash passwords
+  password: String, 
   role: { type: String, default: 'admin' }
 });
 
@@ -50,11 +51,19 @@ const ClassSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// NEW: Special Fund Schema
+const SpecialFundSchema = new mongoose.Schema({
+  name: String,
+  description: String,
+  accountBalance: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const TransactionSchema = new mongoose.Schema({
-  entityId: String, // Store MongoDB _id
-  entityType: String, // 'student' or 'class'
+  entityId: String, 
+  entityType: String, // 'student', 'class', 'special'
   amount: Number,
-  type: String, // 'deposit' or 'withdrawal'
+  type: String, // 'deposit', 'withdrawal'
   date: String,
   reason: String,
   createdAt: { type: Date, default: Date.now }
@@ -63,13 +72,13 @@ const TransactionSchema = new mongoose.Schema({
 const Admin = mongoose.model('Admin', AdminSchema);
 const Student = mongoose.model('Student', StudentSchema);
 const Class = mongoose.model('Class', ClassSchema);
+const SpecialFund = mongoose.model('SpecialFund', SpecialFundSchema);
 const Transaction = mongoose.model('Transaction', TransactionSchema);
 
 // --- ROUTES ---
 
-// 1. Initialization (Seed Data) - Run this once if DB is empty
+// 1. Initialization
 app.post('/api/seed', async (req, res) => {
-  // Check if admins exist
   const adminCount = await Admin.countDocuments();
   if (adminCount === 0) {
     await Admin.create([
@@ -77,19 +86,6 @@ app.post('/api/seed', async (req, res) => {
       { name: 'Admin Two', username: 'admin2', password: 'admin223' }
     ]);
   }
-  
-  // Check students
-  const studentCount = await Student.countDocuments();
-  if (studentCount === 0) {
-    const students = Array.from({ length: 30 }).map((_, i) => ({
-      name: `Student ${i + 1}`,
-      username: `student${i + 1}`,
-      password: `password${i + 1}`,
-      accountBalance: 0
-    }));
-    await Student.insertMany(students);
-  }
-
   res.json({ message: 'Database seeded successfully' });
 });
 
@@ -97,7 +93,6 @@ app.post('/api/seed', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
-  // Check Admin
   const admin = await Admin.findOne({ username, password });
   if (admin) {
     return res.json({ 
@@ -106,7 +101,6 @@ app.post('/api/login', async (req, res) => {
     });
   }
 
-  // Check Student
   const student = await Student.findOne({ username, password });
   if (student) {
     return res.json({ 
@@ -118,104 +112,129 @@ app.post('/api/login', async (req, res) => {
   res.status(401).json({ success: false, message: 'Invalid credentials' });
 });
 
-// 3. Fetch All Data (For Dashboard/Context)
+// 3. Fetch All Data
 app.get('/api/data', async (req, res) => {
   try {
     const admins = await Admin.find();
     const students = await Student.find();
     const classes = await Class.find();
+    const specialFunds = await SpecialFund.find();
     const transactions = await Transaction.find().sort({ createdAt: -1 });
-    res.json({ admins, students, classes, transactions });
+    res.json({ admins, students, classes, specialFunds, transactions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4. Management Routes (CRUD)
+// 4. CRUD Routes
 
-// Add Student
+// Students
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
     await newStudent.save();
     res.json(newStudent);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Update Student (Password/Username)
 app.put('/api/students/:id', async (req, res) => {
   try {
     const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Delete Student
 app.delete('/api/students/:id', async (req, res) => {
-  await Student.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try { await Student.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Add Class
+// Classes
 app.post('/api/classes', async (req, res) => {
-  const newClass = new Class(req.body);
-  await newClass.save();
-  res.json(newClass);
+  try {
+    const newClass = new Class(req.body);
+    await newClass.save();
+    res.json(newClass);
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Delete Class
 app.delete('/api/classes/:id', async (req, res) => {
-  await Class.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try { await Class.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Add Admin
+// Special Funds
+app.post('/api/special-funds', async (req, res) => {
+  try {
+    const newFund = new SpecialFund(req.body);
+    await newFund.save();
+    res.json(newFund);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+app.delete('/api/special-funds/:id', async (req, res) => {
+  try { await SpecialFund.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admins
 app.post('/api/admins', async (req, res) => {
-  const newAdmin = new Admin(req.body);
-  await newAdmin.save();
-  res.json(newAdmin);
+  try {
+    const newAdmin = new Admin(req.body);
+    await newAdmin.save();
+    res.json(newAdmin);
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
-
-// Update Admin
 app.put('/api/admins/:id', async (req, res) => {
-  const updated = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(updated);
+  try {
+    const updated = await Admin.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+app.delete('/api/admins/:id', async (req, res) => {
+  try { await Admin.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // 5. Transactions
 app.post('/api/transactions', async (req, res) => {
-  const { entityId, entityType, amount, type, date, reason } = req.body;
-  const numAmount = Number(amount);
+  try {
+    const { entityId, entityType, amount, type, date, reason } = req.body;
+    const numAmount = Number(amount);
 
-  // Create Transaction Record
-  const transaction = new Transaction({
-    entityId, entityType, amount: numAmount, type, date, reason
-  });
-  await transaction.save();
+    const transaction = new Transaction({
+      entityId, entityType, amount: numAmount, type, date, reason
+    });
+    await transaction.save();
 
-  // Update Account Balance
-  if (entityType === 'student') {
-    const student = await Student.findById(entityId);
-    student.accountBalance = type === 'deposit' 
-      ? student.accountBalance + numAmount 
-      : student.accountBalance - numAmount;
-    await student.save();
-  } else {
-    const classEntity = await Class.findById(entityId);
-    classEntity.accountBalance = type === 'deposit' 
-      ? classEntity.accountBalance + numAmount 
-      : classEntity.accountBalance - numAmount;
-    await classEntity.save();
+    if (entityType === 'student') {
+      const student = await Student.findById(entityId);
+      if (student) {
+        student.accountBalance = type === 'deposit' 
+          ? student.accountBalance + numAmount 
+          : student.accountBalance - numAmount;
+        await student.save();
+      }
+    } else if (entityType === 'class') {
+      const classEntity = await Class.findById(entityId);
+      if (classEntity) {
+        classEntity.accountBalance = type === 'deposit' 
+          ? classEntity.accountBalance + numAmount 
+          : classEntity.accountBalance - numAmount;
+        await classEntity.save();
+      }
+    } else if (entityType === 'special') {
+      const specialFund = await SpecialFund.findById(entityId);
+      if (specialFund) {
+        specialFund.accountBalance = type === 'deposit' 
+          ? specialFund.accountBalance + numAmount 
+          : specialFund.accountBalance - numAmount;
+        await specialFund.save();
+      }
+    }
+
+    res.json(transaction);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  res.json(transaction);
 });
 
-// Start Server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

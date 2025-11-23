@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useFinance } from '../../context/FinanceContext';
+import { useToast } from '../../context/ToastContext'; // <-- Import Hook
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { SearchableSelect } from '../../components/ui/SearchableSelect'; // <-- Import Component
 import { TransactionType } from '../../types';
 import { History, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 
 export const StudentFunds: React.FC = () => {
   const { students, addTransaction, transactions, isLoading, formatCurrency } = useFinance();
+  const { showToast } = useToast(); // <-- Use Hook
 
   const [studentId, setStudentId] = useState('');
   const [amount, setAmount] = useState('');
@@ -16,29 +19,44 @@ export const StudentFunds: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId || !amount) return;
+    if (!studentId || !amount) {
+        showToast('Please select a student and enter an amount', 'error');
+        return;
+    }
     
-    await addTransaction(
-      Number(studentId),
-      'student',
-      Number(amount),
-      type,
-      date,
-      reason
-    );
-
-    // Reset critical fields
-    setAmount('');
-    setReason('');
+    // IMPORTANT: Do not cast studentId to Number, keep as string for Mongo
+    try {
+        await addTransaction(
+            studentId,
+            'student',
+            Number(amount),
+            type,
+            date,
+            reason
+        );
+        showToast('Transaction recorded successfully!', 'success'); // <-- Success Message
+        setAmount('');
+        setReason('');
+    } catch (err) {
+        showToast('Failed to record transaction', 'error'); // <-- Error Message
+    }
   };
 
   const recentStudentTransactions = transactions
     .filter(t => t.entityType === 'student')
     .slice(0, 5);
 
+  // Prepare options for the dropdown
+  const studentOptions = students.map(s => ({
+    value: String(s.id),
+    label: s.name,
+    subLabel: `Bal: ${formatCurrency(s.accountBalance)}`
+  }));
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-6">
+        {/* ... (Header Text stays the same) ... */}
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Student Funds</h1>
           <p className="text-slate-500">Record deposits and withdrawals for students.</p>
@@ -49,20 +67,18 @@ export const StudentFunds: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Student</label>
-                <select
+                {/* REPLACED <select> with <SearchableSelect> */}
+                <SearchableSelect
+                  label="Student"
+                  placeholder="Select Student..."
                   required
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Student...</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (Bal: {formatCurrency(s.accountBalance)})</option>
-                  ))}
-                </select>
+                  onChange={setStudentId}
+                  options={studentOptions}
+                />
               </div>
 
+              {/* ... (Rest of the form inputs stay exactly the same) ... */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
                 <input
@@ -137,6 +153,7 @@ export const StudentFunds: React.FC = () => {
       </div>
 
       <div className="lg:col-span-1">
+        {/* ... (Recent Activity section stays the same) ... */}
         <Card className="h-full">
           <div className="flex items-center gap-2 mb-6 text-slate-800">
             <History size={20} />
@@ -148,7 +165,8 @@ export const StudentFunds: React.FC = () => {
               <p className="text-slate-400 text-sm text-center py-4">No transactions yet.</p>
             )}
             {recentStudentTransactions.map(t => {
-              const student = students.find(s => s.id === t.entityId);
+              // Find student by ID (robust check for string vs number)
+              const student = students.find(s => String(s.id) === String(t.entityId) || s._id === t.entityId);
               return (
                 <div key={t.id} className="flex gap-3 pb-3 border-b border-slate-50 last:border-0">
                   <div className={`mt-1 ${t.type === 'deposit' ? 'text-emerald-500' : 'text-red-500'}`}>

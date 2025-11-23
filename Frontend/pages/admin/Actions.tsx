@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { useFinance } from '../../context/FinanceContext';
+import { useToast } from '../../context/ToastContext'; // Import Toast
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { UserPlus, Users, Trash2, PlusCircle, Key, UserCog, ShieldCheck } from 'lucide-react';
+import { SearchableSelect } from '../../components/ui/SearchableSelect'; // Import SearchableSelect
+import { UserPlus, Users, Trash2, PlusCircle, Key, UserCog, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 export const Actions: React.FC = () => {
   const { 
     addStudent, deleteStudent, 
     addClass, deleteClass, 
     updateStudentPassword, updateStudentUsername, 
-    addAdmin, updateAdminPassword, updateAdminUsername,
+    addAdmin, updateAdminPassword, updateAdminUsername, deleteAdmin,
     students, classes, admins, isLoading 
   } = useFinance();
   
+  const { showToast } = useToast(); // Initialize Toast
+
   // --- Student Forms State ---
   const [studentName, setStudentName] = useState('');
   const [username, setUsername] = useState('');
@@ -36,85 +40,163 @@ export const Actions: React.FC = () => {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [userAdminId, setUserAdminId] = useState('');
   const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [deleteAdminId, setDeleteAdminId] = useState('');
+
+  // --- Option Lists for SearchableSelects ---
+  const adminOptions = admins.map(a => ({
+    value: String(a.id),
+    label: a.name,
+    subLabel: `@${a.username}`
+  }));
+
+  const studentOptions = students.map(s => ({
+    value: String(s.id),
+    label: s.name,
+    subLabel: `@${s.username}`
+  }));
+
+  const classOptions = classes.map(c => ({
+    value: String(c.id),
+    label: c.name
+  }));
 
   // Handlers - Students & Classes
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addStudent(studentName, username, password);
-    setStudentName('');
-    setUsername('');
-    setPassword('');
+    try {
+      await addStudent(studentName, username, password);
+      setStudentName('');
+      setUsername('');
+      setPassword('');
+      showToast('Student added successfully', 'success');
+    } catch (error) {
+      showToast('Failed to add student', 'error');
+    }
   };
 
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addClass(className);
-    setClassName('');
+    try {
+      await addClass(className);
+      setClassName('');
+      showToast('Class added successfully', 'success');
+    } catch (error) {
+      showToast('Failed to add class', 'error');
+    }
   };
 
   const handleDeleteStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deleteStudentId) return showToast('Please select a student', 'error');
+    
     if(confirm('Are you sure? This action cannot be undone.')) {
-      await deleteStudent(Number(deleteStudentId));
-      setDeleteStudentId('');
+      try {
+        await deleteStudent(deleteStudentId);
+        setDeleteStudentId('');
+        showToast('Student deleted successfully', 'success');
+      } catch (error) {
+        showToast('Failed to delete student', 'error');
+      }
     }
   };
 
   const handleDeleteClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deleteClassId) return showToast('Please select a class', 'error');
+
     if(confirm('Are you sure? This action cannot be undone.')) {
-      await deleteClass(Number(deleteClassId));
-      setDeleteClassId('');
+      try {
+        await deleteClass(deleteClassId);
+        setDeleteClassId('');
+        showToast('Class deleted successfully', 'success');
+      } catch (error) {
+        showToast('Failed to delete class', 'error');
+      }
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if(pwStudentId && newPassword) {
-        await updateStudentPassword(Number(pwStudentId), newPassword);
+      try {
+        await updateStudentPassword(pwStudentId, newPassword);
         setPwStudentId('');
         setNewPassword('');
-        alert('Student password updated successfully');
+        showToast('Student password updated successfully', 'success');
+      } catch (error) {
+        showToast('Failed to update password', 'error');
+      }
     }
   };
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     if(userStudentId && newUsername) {
-        await updateStudentUsername(Number(userStudentId), newUsername);
+      try {
+        await updateStudentUsername(userStudentId, newUsername);
         setUserStudentId('');
         setNewUsername('');
-        alert('Student username updated successfully');
+        showToast('Student username updated successfully', 'success');
+      } catch (error) {
+        showToast('Failed to update username', 'error');
+      }
     }
   };
 
   // Handlers - Admins
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addAdmin(adminName, adminUser, adminPass);
-    setAdminName('');
-    setAdminUser('');
-    setAdminPass('');
-    alert('Admin added successfully');
+    try {
+      await addAdmin(adminName, adminUser, adminPass);
+      setAdminName('');
+      setAdminUser('');
+      setAdminPass('');
+      showToast('Admin added successfully', 'success');
+    } catch (error) {
+      showToast('Failed to add admin', 'error');
+    }
   };
 
   const handleChangeAdminPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if(pwAdminId && newAdminPassword) {
-        await updateAdminPassword(Number(pwAdminId), newAdminPassword);
+      try {
+        await updateAdminPassword(pwAdminId, newAdminPassword);
         setPwAdminId('');
         setNewAdminPassword('');
-        alert('Admin password updated successfully');
+        showToast('Admin password updated successfully', 'success');
+      } catch (error) {
+        showToast('Failed to update password', 'error');
+      }
     }
   };
 
   const handleChangeAdminUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     if(userAdminId && newAdminUsername) {
-        await updateAdminUsername(Number(userAdminId), newAdminUsername);
+      try {
+        await updateAdminUsername(userAdminId, newAdminUsername);
         setUserAdminId('');
         setNewAdminUsername('');
-        alert('Admin username updated successfully');
+        showToast('Admin username updated successfully', 'success');
+      } catch (error) {
+        showToast('Failed to update username', 'error');
+      }
+    }
+  };
+
+  const handleDeleteAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteAdminId) return showToast('Please select an admin', 'error');
+
+    if(confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
+      try {
+        await deleteAdmin(deleteAdminId);
+        setDeleteAdminId('');
+        showToast('Admin deleted successfully', 'success');
+      } catch (error) {
+        showToast('Failed to delete admin', 'error');
+      }
     }
   };
 
@@ -131,7 +213,7 @@ export const Actions: React.FC = () => {
           <ShieldCheck className="text-slate-800" /> 
           Admin Management
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Add Admin */}
           <Card className="bg-slate-50 border-slate-200">
             <div className="flex items-center gap-3 mb-4 text-slate-700">
@@ -162,13 +244,14 @@ export const Actions: React.FC = () => {
               <h3 className="font-semibold">Admin Password</h3>
             </div>
             <form onSubmit={handleChangeAdminPassword} className="space-y-3">
-              <select 
-                required value={pwAdminId} onChange={e => setPwAdminId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm"
-              >
-                <option value="">Select Admin...</option>
-                {admins.map(a => <option key={a.id} value={a.id}>{a.name} (@{a.username})</option>)}
-              </select>
+              {/* Searchable Admin Select */}
+              <SearchableSelect 
+                placeholder="Select Admin..."
+                value={pwAdminId}
+                onChange={setPwAdminId}
+                options={adminOptions}
+                required
+              />
               <input 
                 type="password" required value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="New Password"
@@ -184,18 +267,39 @@ export const Actions: React.FC = () => {
               <h3 className="font-semibold">Admin Username</h3>
             </div>
             <form onSubmit={handleChangeAdminUsername} className="space-y-3">
-              <select 
-                required value={userAdminId} onChange={e => setUserAdminId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm"
-              >
-                <option value="">Select Admin...</option>
-                {admins.map(a => <option key={a.id} value={a.id}>{a.name} (@{a.username})</option>)}
-              </select>
+              {/* Searchable Admin Select */}
+              <SearchableSelect 
+                placeholder="Select Admin..."
+                value={userAdminId}
+                onChange={setUserAdminId}
+                options={adminOptions}
+                required
+              />
               <input 
                 type="text" required value={newAdminUsername} onChange={e => setNewAdminUsername(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="New Username"
               />
               <Button type="submit" variant="outline" className="w-full text-sm">Update Username</Button>
+            </form>
+          </Card>
+
+          {/* Delete Admin */}
+          <Card className="bg-slate-50 border-red-200">
+             <div className="flex items-center gap-3 mb-4 text-red-700">
+              <ShieldAlert size={20} />
+              <h3 className="font-semibold">Delete Admin</h3>
+            </div>
+            <form onSubmit={handleDeleteAdmin} className="space-y-3">
+              {/* Searchable Admin Select */}
+              <SearchableSelect 
+                placeholder="Select Admin..."
+                value={deleteAdminId}
+                onChange={setDeleteAdminId}
+                options={adminOptions}
+                required
+              />
+              <div className="h-[46px]"></div> {/* Spacer */}
+              <Button type="submit" variant="danger" className="w-full text-sm">Delete Admin</Button>
             </form>
           </Card>
         </div>
@@ -283,18 +387,15 @@ export const Actions: React.FC = () => {
             </div>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Select Student</label>
-                <select 
-                  required
+                {/* Searchable Student Select */}
+                <SearchableSelect 
+                  label="Select Student"
+                  placeholder="Select Student..."
                   value={pwStudentId}
-                  onChange={(e) => setPwStudentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value="">-- Select Student --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (@{s.username})</option>
-                  ))}
-                </select>
+                  onChange={setPwStudentId}
+                  options={studentOptions}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
@@ -319,18 +420,15 @@ export const Actions: React.FC = () => {
             </div>
             <form onSubmit={handleChangeUsername} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Select Student</label>
-                <select 
-                  required
+                {/* Searchable Student Select */}
+                <SearchableSelect 
+                  label="Select Student"
+                  placeholder="Select Student..."
                   value={userStudentId}
-                  onChange={(e) => setUserStudentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">-- Select Student --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (@{s.username})</option>
-                  ))}
-                </select>
+                  onChange={setUserStudentId}
+                  options={studentOptions}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">New Username</label>
@@ -355,18 +453,15 @@ export const Actions: React.FC = () => {
             </div>
             <form onSubmit={handleDeleteStudent} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Select Student</label>
-                <select 
-                  required
+                {/* Searchable Student Select */}
+                <SearchableSelect 
+                  label="Select Student"
+                  placeholder="Select Student..."
                   value={deleteStudentId}
-                  onChange={(e) => setDeleteStudentId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">-- Select Student --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} (@{s.username})</option>
-                  ))}
-                </select>
+                  onChange={setDeleteStudentId}
+                  options={studentOptions}
+                  required
+                />
               </div>
               <Button type="submit" variant="danger" isLoading={isLoading} className="w-full">Delete Student</Button>
             </form>
@@ -380,18 +475,15 @@ export const Actions: React.FC = () => {
             </div>
             <form onSubmit={handleDeleteClass} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Select Class</label>
-                <select 
-                  required
+                {/* Searchable Class Select */}
+                <SearchableSelect 
+                  label="Select Class"
+                  placeholder="Select Class..."
                   value={deleteClassId}
-                  onChange={(e) => setDeleteClassId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">-- Select Class --</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={setDeleteClassId}
+                  options={classOptions}
+                  required
+                />
               </div>
               <Button type="submit" variant="danger" isLoading={isLoading} className="w-full">Delete Class</Button>
             </form>

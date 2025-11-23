@@ -11,7 +11,8 @@ import {
   X,
   ChevronLeft,
   FileText,
-  User
+  User,
+  Star
 } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,6 +30,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { name: 'Actions', path: '/admin/actions', icon: Settings },
     { name: 'Student Funds', path: '/admin/students-fund', icon: Users },
     { name: 'Class Funds', path: '/admin/class-fund', icon: Landmark },
+    { name: 'Special Funds', path: '/admin/special-fund', icon: Star },
   ];
 
   const studentLinks = [
