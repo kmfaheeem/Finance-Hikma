@@ -5,7 +5,8 @@ import { INITIAL_ADMINS, INITIAL_CLASSES, INITIAL_STUDENTS, INITIAL_TRANSACTIONS
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 // API URL
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// use environment variable if set, otherwise fall back to the deployed backend
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://finance-hikma-1.onrender.com';
 const API_URL = BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`;
 
 const USER_STORAGE_KEY = 'hikma_finance_user';

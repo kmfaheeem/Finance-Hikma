@@ -8,17 +8,21 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+// allow requests from the frontend origins (add more as needed)
+const allowedOrigins = [
+  "http://localhost:5173",                       // local dev
+  "https://hikma-finance.vercel.app",            // deployed frontend
+  "https://finance-hikma-1.onrender.com"          // render-hosted client or same domain if used
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://hikma-finance.vercel.app" 
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(bodyParser.json());
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://finance:finance@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://finance:financehikma@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
 
 console.log("Connecting to MongoDB...");
 
@@ -91,25 +95,30 @@ app.post('/api/seed', async (req, res) => {
 
 // 2. Login
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const admin = await Admin.findOne({ username, password });
-  if (admin) {
-    return res.json({ 
-      success: true, 
-      user: { id: admin._id, name: admin.name, username: admin.username, role: 'admin' } 
-    });
+    const admin = await Admin.findOne({ username, password });
+    if (admin) {
+      return res.json({ 
+        success: true, 
+        user: { id: admin._id, name: admin.name, username: admin.username, role: 'admin' } 
+      });
+    }
+
+    const student = await Student.findOne({ username, password });
+    if (student) {
+      return res.json({ 
+        success: true, 
+        user: { id: student._id, name: student.name, username: student.username, role: 'student' } 
+      });
+    }
+
+    res.status(401).json({ success: false, message: 'Invalid credentials' });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  const student = await Student.findOne({ username, password });
-  if (student) {
-    return res.json({ 
-      success: true, 
-      user: { id: student._id, name: student.name, username: student.username, role: 'student' } 
-    });
-  }
-
-  res.status(401).json({ success: false, message: 'Invalid credentials' });
 });
 
 // 3. Fetch All Data
