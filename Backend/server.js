@@ -83,14 +83,19 @@ const Transaction = mongoose.model('Transaction', TransactionSchema);
 
 // 1. Initialization
 app.post('/api/seed', async (req, res) => {
-  const adminCount = await Admin.countDocuments();
-  if (adminCount === 0) {
-    await Admin.create([
-      { name: 'Admin One', username: 'admin1', password: 'admin123' },
-      { name: 'Admin Two', username: 'admin2', password: 'admin223' }
-    ]);
+  try {
+    const adminCount = await Admin.countDocuments();
+    if (adminCount === 0) {
+      await Admin.create([
+        { name: 'Admin One', username: 'admin1', password: 'admin123' },
+        { name: 'Admin Two', username: 'admin2', password: 'admin223' }
+      ]);
+    }
+    res.json({ message: 'Database seeded successfully' });
+  } catch (err) {
+    console.error('Seed error:', err);
+    res.status(500).json({ error: err.message });
   }
-  res.json({ message: 'Database seeded successfully' });
 });
 
 // 2. Login
