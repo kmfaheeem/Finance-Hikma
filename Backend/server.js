@@ -22,7 +22,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://finance:financehikma@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://finance:hikmafinance@cluster0.w0v0u10.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority";
 
 console.log("Connecting to MongoDB...");
 
