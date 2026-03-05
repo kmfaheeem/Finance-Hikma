@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   FileText,
   User,
-  Star
+  Star,
+  AlertTriangle
 } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,7 +32,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { name: 'Student Funds', path: '/admin/students-fund', icon: Users },
     { name: 'Class Funds', path: '/admin/class-fund', icon: Landmark },
     { name: 'Special Funds', path: '/admin/special-fund', icon: Star },
-    { name: 'Reports', path: '/student/reports', icon: FileText }, // Added Reports to Admin
+    // Fix: Using AlertTriangle which is imported above
+    { name: 'Negative Balances', path: '/admin/negative-balances', icon: AlertTriangle }, 
+    { name: 'Reports', path: '/student/reports', icon: FileText },
   ];
 
   const studentLinks = [
@@ -112,7 +115,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        {/* Go Back Button */}
         {location.pathname !== '/admin/dashboard' && location.pathname !== '/student/reports' && (
           <button 
             onClick={() => navigate(-1)}

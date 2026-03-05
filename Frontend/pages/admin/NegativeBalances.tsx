@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFinance } from '../../context/FinanceContext';
 import { Card } from '../../components/ui/Card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Edit2, Save, X } from 'lucide-react';
 
 export const NegativeBalances: React.FC = () => {
-  const { students, loading } = useFinance();
+  const { students, loading, updateStudent } = useFinance();
+  // editing removed – no modal or due date state needed
 
   // Filter for individuals with a balance below zero
-  const defaulters = students.filter((student) => student.balance < 0);
+  const defaulters = students.filter((student) => student.accountBalance < 0);
+
+  const formatForInput = (dateStr: string) => {
+    // input[type=date] wants YYYY-MM-DD; make sure we convert any ISO or
+    // full datetime string to that form, otherwise the field may appear
+    // empty even though the value exists.
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+  };
+
+  // edit/remove functionality has been removed per request
 
   if (loading) {
     return (
@@ -31,29 +43,37 @@ export const NegativeBalances: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 text-emerald-900">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Sl No</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Class</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Balance</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Debited Date</th>
+                {/* due date column removed */}
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Balance</th>
+                {/* actions header removed */}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {defaulters.length > 0 ? (
-                defaulters.map((student) => (
+                defaulters.map((student, index) => (
                   <tr key={student._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {index + 1}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {student.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.className}
+                      {new Date(student.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-red-600">
-                      ₹{Math.abs(student.balance).toLocaleString()}
+                    {/* due date cell removed */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-left font-bold text-red-600">
+                      ₹{Math.abs(student.accountBalance).toLocaleString()}
                     </td>
+                    {/* actions column removed */}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center">
+                  <td colSpan={6} className="px-6 py-10 text-center">
                     <div className="flex flex-col items-center text-gray-500">
                       <AlertCircle className="h-10 w-10 mb-2" />
                       <p>No individuals currently have a negative balance.</p>
@@ -65,6 +85,7 @@ export const NegativeBalances: React.FC = () => {
           </table>
         </div>
       </Card>
+
     </div>
   );
 };

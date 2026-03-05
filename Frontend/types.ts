@@ -26,6 +26,7 @@ export interface Student {
   username: string;
   password?: string;
   accountBalance: number;
+  dueDate?: string;
   createdAt: string;
 }
 
@@ -79,6 +80,7 @@ export interface FinanceContextType extends FinanceState {
   addStudent: (name: string, username: string, password: string) => Promise<void>;
   updateStudentPassword: (id: number | string, newPassword: string) => Promise<void>;
   updateStudentUsername: (id: number | string, newUsername: string) => Promise<void>;
+  updateStudent: (id: number | string, updates: Partial<Student>) => Promise<void>;
   deleteStudent: (id: number | string) => Promise<void>;
   addClass: (name: string) => Promise<void>;
   deleteClass: (id: number | string) => Promise<void>;

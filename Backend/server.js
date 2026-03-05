@@ -46,6 +46,7 @@ const StudentSchema = new mongoose.Schema({
   username: { type: String, unique: true },
   password: String,
   accountBalance: { type: Number, default: 0 },
+  dueDate: String,
   createdAt: { type: Date, default: Date.now }
 });
 

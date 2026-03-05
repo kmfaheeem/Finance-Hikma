@@ -243,6 +243,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  const updateStudent = async (id: number | string, updates: Partial<Student>) => {
+    await executeAction(
+      async () => {
+        const res = await fetch(`${API_URL}/students/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        if(!res.ok) throw new Error("Failed to update student");
+      },
+      () => {
+        setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, ...updates } : s));
+      }
+    );
+  };
+
   const deleteStudent = async (id: number | string) => {
     await executeAction(
       async () => {
@@ -387,6 +403,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addStudent,
         updateStudentPassword,
         updateStudentUsername,
+        updateStudent,
         deleteStudent,
         addClass,
         deleteClass,
