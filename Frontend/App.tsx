@@ -14,6 +14,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 import { InstallPrompt } from './components/InstallPrompt';
 import { NegativeBalances } from './pages/admin/NegativeBalances';
+import { Settings } from './pages/student/Settings';
 
 // ... (Keep your ProtectedRoute component exactly as is) ...
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -46,8 +47,13 @@ const AppRoutes = () => {
       <Route path="/admin/class-fund" element={<ProtectedRoute allowedRoles={['admin']}><Layout><ClassFunds /></Layout></ProtectedRoute>} />
       <Route path="/admin/special-fund" element={<ProtectedRoute allowedRoles={['admin']}><Layout><SpecialFunds /></Layout></ProtectedRoute>} />
       <Route path="/admin/negative-balances" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><NegativeBalances /></Layout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/student/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
-    </Routes>
+      <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
+      <Route path="/student/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
+     </Routes>
   );
 };
 

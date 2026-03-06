@@ -8,11 +8,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// allow requests from the frontend origins (add more as needed)
+// allow requests from the frontend origins
 const allowedOrigins = [
   "http://localhost:5173",                       // local dev
   "https://hikma-finance.vercel.app",            // deployed frontend
-  "https://finance-hikma-1.onrender.com"          // render-hosted client or same domain if used
+  "https://finance-hikma-1.onrender.com"          // render-hosted client
 ];
 
 app.use(cors({
@@ -56,7 +56,6 @@ const ClassSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// NEW: Special Fund Schema
 const SpecialFundSchema = new mongoose.Schema({
   name: String,
   description: String,
@@ -141,9 +140,7 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-// 4. CRUD Routes
-
-// Students
+// 4. CRUD Routes (Students, Classes, Special Funds, Admins)
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
@@ -162,7 +159,6 @@ app.delete('/api/students/:id', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Classes
 app.post('/api/classes', async (req, res) => {
   try {
     const newClass = new Class(req.body);
@@ -175,7 +171,6 @@ app.delete('/api/classes/:id', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Special Funds
 app.post('/api/special-funds', async (req, res) => {
   try {
     const newFund = new SpecialFund(req.body);
@@ -188,7 +183,6 @@ app.delete('/api/special-funds/:id', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Admins
 app.post('/api/admins', async (req, res) => {
   try {
     const newAdmin = new Admin(req.body);
@@ -250,6 +244,40 @@ app.post('/api/transactions', async (req, res) => {
   }
 });
 
+// --- NEW SETTINGS UPDATE ROUTE ---
+app.put('/api/settings/update', async (req, res) => {
+  const { userId, newUsername, newPassword, role } = req.body;
+
+  try {
+    const Model = role === 'admin' ? Admin : Student;
+
+    if (!newUsername) {
+      return res.status(400).json({ message: "Username cannot be empty" });
+    }
+
+    // Uniqueness Check: Ensure the new username isn't taken
+    const existingUser = await Model.findOne({ username: newUsername, _id: { $ne: userId } });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username is already taken" });
+    }
+
+    const updateData = { username: newUsername };
+    if (newPassword && newPassword.trim() !== "") {
+      updateData.password = newPassword;
+    }
+
+    const updatedUser = await Model.findByIdAndUpdate(userId, updateData, { new: true });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "Profile updated successfully!", user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

@@ -35,10 +35,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     // Fix: Using AlertTriangle which is imported above
     { name: 'Negative Balances', path: '/admin/negative-balances', icon: AlertTriangle }, 
     { name: 'Reports', path: '/student/reports', icon: FileText },
+    { name: 'Settings', path: '/student/settings', icon: Settings },
   ];
 
   const studentLinks = [
     { name: 'My Reports', path: '/student/reports', icon: FileText },
+    { name: 'Settings', path: '/student/settings', icon: Settings },
   ];
 
   const links = currentUser.role === 'admin' ? adminLinks : studentLinks;
