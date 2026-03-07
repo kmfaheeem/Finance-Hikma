@@ -26,7 +26,7 @@ export const SpecialFunds: React.FC = () => {
   const handleAddFund = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFundName) return;
-    
+
     await addSpecialFund(newFundName, newFundDesc);
     setNewFundName('');
     setNewFundDesc('');
@@ -35,7 +35,7 @@ export const SpecialFunds: React.FC = () => {
   const handleTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fundId || !amount) return;
-    
+
     await addTransaction(
       fundId,
       'special',
@@ -64,7 +64,7 @@ export const SpecialFunds: React.FC = () => {
 
   // Filter active funds based on search term
   const filteredActiveFunds = useMemo(() => {
-    return specialFunds.filter(fund => 
+    return specialFunds.filter(fund =>
       fund.name.toLowerCase().includes(fundSearchTerm.toLowerCase())
     );
   }, [specialFunds, fundSearchTerm]);
@@ -78,7 +78,7 @@ export const SpecialFunds: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Create New Fund Section */}
-        <Card>
+        <Card className="bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
           <div className="flex items-center gap-2 mb-4 text-slate-800">
             <PlusCircle size={20} />
             <h2 className="text-lg font-semibold">Create New Fund</h2>
@@ -105,22 +105,22 @@ export const SpecialFunds: React.FC = () => {
                 placeholder="Brief description of the fund"
               />
             </div>
-            <Button type="submit" isLoading={isLoading} className="w-full">
+            <Button type="submit" isLoading={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 shadow-md">
               Create Fund
             </Button>
           </form>
         </Card>
 
         {/* Active Funds List */}
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-800">Active Special Funds</h2>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
+            <input
               type="text"
               value={fundSearchTerm}
               onChange={(e) => setFundSearchTerm(e.target.value)}
@@ -145,7 +145,7 @@ export const SpecialFunds: React.FC = () => {
                     <span className={`font-bold ${fund.accountBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {formatCurrency(fund.accountBalance)}
                     </span>
-                    <button 
+                    <button
                       onClick={() => deleteSpecialFund(fund.id!)}
                       className="text-slate-400 hover:text-red-500 transition-colors p-1"
                       title="Delete Fund"
@@ -163,7 +163,7 @@ export const SpecialFunds: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Transaction Form */}
         <div className="lg:col-span-2">
-          <Card>
+          <Card className="bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
             <h2 className="text-lg font-semibold mb-6">Record Transaction</h2>
             <form onSubmit={handleTransaction} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -196,20 +196,20 @@ export const SpecialFunds: React.FC = () => {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Transaction Type</label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="type" 
-                        checked={type === 'deposit'} 
+                      <input
+                        type="radio"
+                        name="type"
+                        checked={type === 'deposit'}
                         onChange={() => setType('deposit')}
                         className="text-blue-600 focus:ring-blue-500"
                       />
                       <span className="text-slate-700">Deposit (Add)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="type" 
-                        checked={type === 'withdrawal'} 
+                      <input
+                        type="radio"
+                        name="type"
+                        checked={type === 'withdrawal'}
                         onChange={() => setType('withdrawal')}
                         className="text-red-600 focus:ring-red-500"
                       />
@@ -231,10 +231,9 @@ export const SpecialFunds: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason / Description</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason / Description (Optional)</label>
                 <input
                   type="text"
-                  required
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -243,7 +242,7 @@ export const SpecialFunds: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <Button type="submit" isLoading={isLoading} className="w-full md:w-auto">
+                <Button type="submit" isLoading={isLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 shadow-md">
                   Process Transaction
                 </Button>
               </div>
@@ -253,12 +252,12 @@ export const SpecialFunds: React.FC = () => {
 
         {/* Recent History */}
         <div className="lg:col-span-1">
-          <Card className="h-full">
+          <Card className="h-full bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
             <div className="flex items-center gap-2 mb-6 text-slate-800">
               <History size={20} />
               <h3 className="font-semibold">Recent Activity</h3>
             </div>
-            
+
             <div className="space-y-4">
               {recentTransactions.length === 0 && (
                 <p className="text-slate-400 text-sm text-center py-4">No transactions yet.</p>

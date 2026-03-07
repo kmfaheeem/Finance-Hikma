@@ -20,25 +20,25 @@ export const StudentFunds: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentId || !amount) {
-        showToast('Please select a student and enter an amount', 'error');
-        return;
+      showToast('Please select a student and enter an amount', 'error');
+      return;
     }
-    
+
     // IMPORTANT: Do not cast studentId to Number, keep as string for Mongo
     try {
-        await addTransaction(
-            studentId,
-            'student',
-            Number(amount),
-            type,
-            date,
-            reason
-        );
-        showToast('Transaction recorded successfully!', 'success'); // <-- Success Message
-        setAmount('');
-        setReason('');
+      await addTransaction(
+        studentId,
+        'student',
+        Number(amount),
+        type,
+        date,
+        reason
+      );
+      showToast('Transaction recorded successfully!', 'success'); // <-- Success Message
+      setAmount('');
+      setReason('');
     } catch (err) {
-        showToast('Failed to record transaction', 'error'); // <-- Error Message
+      showToast('Failed to record transaction', 'error'); // <-- Error Message
     }
   };
 
@@ -62,7 +62,7 @@ export const StudentFunds: React.FC = () => {
           <p className="text-slate-500">Record deposits and withdrawals for students.</p>
         </div>
 
-        <Card>
+        <Card className="bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
           <h2 className="text-lg font-semibold mb-6">New Transaction</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -97,20 +97,20 @@ export const StudentFunds: React.FC = () => {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Transaction Type</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="type" 
-                      checked={type === 'deposit'} 
+                    <input
+                      type="radio"
+                      name="type"
+                      checked={type === 'deposit'}
                       onChange={() => setType('deposit')}
                       className="text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-slate-700">Deposit (Add Funds)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="type" 
-                      checked={type === 'withdrawal'} 
+                    <input
+                      type="radio"
+                      name="type"
+                      checked={type === 'withdrawal'}
                       onChange={() => setType('withdrawal')}
                       className="text-red-600 focus:ring-red-500"
                     />
@@ -132,10 +132,9 @@ export const StudentFunds: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Reason / Description</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Reason / Description (Optional)</label>
               <input
                 type="text"
-                required
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -144,7 +143,7 @@ export const StudentFunds: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-slate-100">
-              <Button type="submit" isLoading={isLoading} className="w-full md:w-auto">
+              <Button type="submit" isLoading={isLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 shadow-md">
                 Process Transaction
               </Button>
             </div>
@@ -154,12 +153,12 @@ export const StudentFunds: React.FC = () => {
 
       <div className="lg:col-span-1">
         {/* ... (Recent Activity section stays the same) ... */}
-        <Card className="h-full">
+        <Card className="h-full bg-white/70 backdrop-blur-xl border-slate-200/50 shadow-xl">
           <div className="flex items-center gap-2 mb-6 text-slate-800">
             <History size={20} />
             <h3 className="font-semibold">Recent Activity</h3>
           </div>
-          
+
           <div className="space-y-4">
             {recentStudentTransactions.length === 0 && (
               <p className="text-slate-400 text-sm text-center py-4">No transactions yet.</p>

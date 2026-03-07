@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { FinanceContextType, Student, ClassEntity, SpecialFund, Transaction, User, TransactionType, Admin } from '../types';
+import { FinanceContextType, Student, ClassEntity, SpecialFund, Transaction, User, TransactionType, Admin, AppNotification, Role } from '../types';
 import { INITIAL_ADMINS, INITIAL_CLASSES, INITIAL_STUDENTS, INITIAL_TRANSACTIONS } from '../services/mockData';
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -23,14 +23,45 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [classes, setClasses] = useState<ClassEntity[]>(INITIAL_CLASSES);
   const [specialFunds, setSpecialFunds] = useState<SpecialFund[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    const stored = localStorage.getItem('hikma_notifications');
+    return stored ? JSON.parse(stored) : [];
+  });
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  useEffect(() => {
+    localStorage.setItem('hikma_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  const addNotification = (type: AppNotification['type'], message: string) => {
+    const newNotif: AppNotification = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      message,
+      date: new Date().toISOString(),
+      read: false,
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+
   const refreshData = async () => {
     try {
       const res = await fetch(`${API_URL}/data`);
       if (!res.ok) throw new Error('Backend not reachable');
       const data = await res.json();
-      
+
       const normalize = (item: any) => ({ ...item, id: item._id || item.id });
 
       setAdmins(data.admins.map(normalize));
@@ -38,7 +69,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setClasses(data.classes.map(normalize));
       setSpecialFunds(data.specialFunds ? data.specialFunds.map(normalize) : []);
       setTransactions(data.transactions.map(normalize));
-      
+
     } catch (error) {
       // console.warn("Backend not connected, using local data");
     }
@@ -56,7 +87,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }).format(amount || 0);
   };
 
-  const login = async (username: string, pass: string): Promise<boolean> => {
+  const login = async (username: string, pass: string): Promise<{ success: boolean; role?: Role }> => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/login`, {
@@ -64,7 +95,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password: pass }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -72,7 +103,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user)); // Save to storage
           await refreshData();
           setIsLoading(false);
-          return true;
+          return { success: true, role: data.user.role };
         }
       }
     } catch (e) {
@@ -85,7 +116,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCurrentUser(userObj);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userObj)); // Save to storage
       setIsLoading(false);
-      return true;
+      return { success: true, role: 'admin' };
     }
 
     const student = students.find(s => s.username === username && s.password === pass);
@@ -94,11 +125,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCurrentUser(userObj);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userObj)); // Save to storage
       setIsLoading(false);
-      return true;
+      return { success: true, role: 'student' };
     }
 
     setIsLoading(false);
-    return false;
+    return { success: false };
   };
 
   const logout = () => {
@@ -107,16 +138,23 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const executeAction = async (
-    apiCall: () => Promise<void>, 
-    localFallback: () => void
+    apiCall: () => Promise<void>,
+    localFallback: () => void,
+    actionName: string = "Action"
   ) => {
     setIsLoading(true);
     try {
       await apiCall();
-      await refreshData(); 
-    } catch (e) {
+      await refreshData();
+      addNotification('success', `${actionName} successful`);
+    } catch (e: any) {
       console.warn("Action failed on backend or backend unreachable, executing locally.", e);
-      localFallback(); 
+      try {
+        localFallback();
+        addNotification('success', `${actionName} successful (Offline mode)`);
+      } catch (err: any) {
+        addNotification('error', `${actionName} failed`);
+      }
     }
     setIsLoading(false);
   };
@@ -130,7 +168,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, username, password, role: 'admin' })
         });
-        if(!res.ok) throw new Error("Failed to add admin");
+        if (!res.ok) throw new Error("Failed to add admin");
       },
       () => {
         const newAdmin: Admin = {
@@ -138,7 +176,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           name, username, password, role: 'admin'
         };
         setAdmins([...admins, newAdmin]);
-      }
+      },
+      "Add admin"
     );
   };
 
@@ -150,11 +189,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: newPassword })
         });
-        if(!res.ok) throw new Error("Failed to update admin password");
+        if (!res.ok) throw new Error("Failed to update admin password");
       },
       () => {
         setAdmins(admins.map(a => (String(a.id) === String(id) || a._id === id) ? { ...a, password: newPassword } : a));
-      }
+      },
+      "Update admin password"
     );
   };
 
@@ -166,11 +206,29 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: newUsername })
         });
-        if(!res.ok) throw new Error("Failed to update admin username");
+        if (!res.ok) throw new Error("Failed to update admin username");
       },
       () => {
         setAdmins(admins.map(a => (String(a.id) === String(id) || a._id === id) ? { ...a, username: newUsername } : a));
-      }
+      },
+      "Update admin username"
+    );
+  };
+
+  const updateAdmin = async (id: number | string, updates: Partial<Admin>) => {
+    await executeAction(
+      async () => {
+        const res = await fetch(`${API_URL}/admins/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        if (!res.ok) throw new Error("Failed to update admin");
+      },
+      () => {
+        setAdmins(admins.map(a => (String(a.id) === String(id) || a._id === id) ? { ...a, ...updates } : a));
+      },
+      "Update admin"
     );
   };
 
@@ -178,15 +236,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await executeAction(
       async () => {
         const res = await fetch(`${API_URL}/admins/${id}`, { method: 'DELETE' });
-        if(!res.ok) throw new Error("Failed to delete admin");
+        if (!res.ok) throw new Error("Failed to delete admin");
       },
       () => {
         setAdmins(admins.filter(a => String(a.id) !== String(id) && a._id !== id));
-      }
+      },
+      "Delete admin"
     );
   };
 
-// --- Student Management ---
+  // --- Student Management ---
   const addStudent = async (name: string, username: string, password: string = 'default123') => {
     await executeAction(
       async () => {
@@ -200,14 +259,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       () => {
         const newStudent: Student = {
           id: Date.now(),
-          name, 
-          username, 
-          password, 
-          accountBalance: 0, 
+          name,
+          username,
+          password,
+          accountBalance: 0,
           createdAt: new Date().toISOString()
         };
         setStudents(prev => [...prev, newStudent]);
-      }
+      },
+      "Add student"
     );
   };
 
@@ -219,11 +279,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: newPassword })
         });
-        if(!res.ok) throw new Error("Failed to update student password");
+        if (!res.ok) throw new Error("Failed to update student password");
       },
       () => {
         setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, password: newPassword } : s));
-      }
+      },
+      "Update student password"
     );
   };
 
@@ -235,11 +296,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: newUsername })
         });
-        if(!res.ok) throw new Error("Failed to update student username");
+        if (!res.ok) throw new Error("Failed to update student username");
       },
       () => {
         setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, username: newUsername } : s));
-      }
+      },
+      "Update student username"
     );
   };
 
@@ -251,11 +313,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updates)
         });
-        if(!res.ok) throw new Error("Failed to update student");
+        if (!res.ok) throw new Error("Failed to update student");
       },
       () => {
         setStudents(students.map(s => (String(s.id) === String(id) || s._id === id) ? { ...s, ...updates } : s));
-      }
+      },
+      "Update student"
     );
   };
 
@@ -263,12 +326,29 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await executeAction(
       async () => {
         const res = await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
-        if(!res.ok) throw new Error("Failed to delete student");
+        if (!res.ok) throw new Error("Failed to delete student");
       },
       () => {
         setStudents(students.filter(s => String(s.id) !== String(id) && s._id !== id));
-      }
+      },
+      "Delete student"
     );
+  };
+
+  const updateProfile = async (updates: Partial<User>) => {
+    if (!currentUser) return;
+
+    // Attempt local state update to the respective collection
+    if (currentUser.role === 'admin') {
+      await updateAdmin(currentUser.id, updates as Partial<Admin>);
+    } else {
+      await updateStudent(currentUser.id, updates as Partial<Student>);
+    }
+
+    // Update the local current user to reflect UI immediately
+    const updatedUser = { ...currentUser, ...updates };
+    setCurrentUser(updatedUser);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser)); // Save to storage
   };
 
   // --- Class Management ---
@@ -280,7 +360,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name })
         });
-        if(!res.ok) throw new Error("Failed to add class");
+        if (!res.ok) throw new Error("Failed to add class");
       },
       () => {
         const newClass: ClassEntity = {
@@ -288,7 +368,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           name, accountBalance: 0, createdAt: new Date().toISOString()
         };
         setClasses([...classes, newClass]);
-      }
+      },
+      "Add class"
     );
   };
 
@@ -296,11 +377,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await executeAction(
       async () => {
         const res = await fetch(`${API_URL}/classes/${id}`, { method: 'DELETE' });
-        if(!res.ok) throw new Error("Failed to delete class");
+        if (!res.ok) throw new Error("Failed to delete class");
       },
       () => {
         setClasses(classes.filter(c => String(c.id) !== String(id) && c._id !== id));
-      }
+      },
+      "Delete class"
     );
   };
 
@@ -313,7 +395,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, description })
         });
-        if(!res.ok) throw new Error("Failed to add special fund");
+        if (!res.ok) throw new Error("Failed to add special fund");
       },
       () => {
         const newFund: SpecialFund = {
@@ -321,7 +403,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           name, description, accountBalance: 0, createdAt: new Date().toISOString()
         };
         setSpecialFunds([...specialFunds, newFund]);
-      }
+      },
+      "Add special fund"
     );
   };
 
@@ -329,11 +412,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await executeAction(
       async () => {
         const res = await fetch(`${API_URL}/special-funds/${id}`, { method: 'DELETE' });
-        if(!res.ok) throw new Error("Failed to delete special fund");
+        if (!res.ok) throw new Error("Failed to delete special fund");
       },
       () => {
         setSpecialFunds(specialFunds.filter(f => String(f.id) !== String(id) && f._id !== id));
-      }
+      },
+      "Delete special fund"
     );
   };
 
@@ -354,7 +438,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entityId, entityType, amount, type, date, reason })
         });
-        if(!res.ok) throw new Error("Failed to add transaction");
+        if (!res.ok) throw new Error("Failed to add transaction");
       },
       () => {
         const newTx: Transaction = {
@@ -380,7 +464,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         } else if (entityType === 'special') {
           setSpecialFunds(updateEntityBalance(specialFunds));
         }
-      }
+      },
+      "Add transaction"
     );
   };
 
@@ -393,12 +478,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         classes,
         specialFunds,
         transactions,
+        notifications,
         isLoading,
         login,
         logout,
         addAdmin,
         updateAdminPassword,
         updateAdminUsername,
+        updateAdmin,
+        updateProfile,
         deleteAdmin,
         addStudent,
         updateStudentPassword,
@@ -410,7 +498,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addSpecialFund,
         deleteSpecialFund,
         addTransaction,
-        formatCurrency
+        formatCurrency,
+        addNotification,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        clearNotifications
       }}
     >
       {children}

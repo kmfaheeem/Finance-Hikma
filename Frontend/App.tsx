@@ -5,21 +5,22 @@ import { ToastProvider } from './context/ToastContext'; // <-- Import this
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/admin/Dashboard';
-import { Actions } from './pages/admin/Actions';
 import { StudentFunds } from './pages/admin/StudentFunds';
 import { ClassFunds } from './pages/admin/ClassFunds';
 import { SpecialFunds } from './pages/admin/SpecialFunds';
 import { Reports } from './pages/student/Reports';
+import { StudentDashboard } from './pages/student/StudentDashboard';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 import { InstallPrompt } from './components/InstallPrompt';
 import { NegativeBalances } from './pages/admin/NegativeBalances';
-import { Settings } from './pages/student/Settings';
+import { Settings } from './pages/admin/Settings';
+import { Profile } from './pages/Profile';
 
 // ... (Keep your ProtectedRoute component exactly as is) ...
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
-  children, 
-  allowedRoles 
+const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
+  children,
+  allowedRoles
 }) => {
   const { currentUser } = useFinance();
 
@@ -28,7 +29,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   }
 
   if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
-    return <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/student/reports'} replace />;
+    return <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -40,20 +41,18 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
-      
+
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><Layout><Dashboard /></Layout></ProtectedRoute>} />
-      <Route path="/admin/actions" element={<ProtectedRoute allowedRoles={['admin']}><Layout><Actions /></Layout></ProtectedRoute>} />
       <Route path="/admin/students-fund" element={<ProtectedRoute allowedRoles={['admin']}><Layout><StudentFunds /></Layout></ProtectedRoute>} />
       <Route path="/admin/class-fund" element={<ProtectedRoute allowedRoles={['admin']}><Layout><ClassFunds /></Layout></ProtectedRoute>} />
       <Route path="/admin/special-fund" element={<ProtectedRoute allowedRoles={['admin']}><Layout><SpecialFunds /></Layout></ProtectedRoute>} />
       <Route path="/admin/negative-balances" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><NegativeBalances /></Layout></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
-      <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
-      <Route path="/student/reports" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Reports /></Layout></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
-      <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
-      <Route path="/student/settings" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Settings /></Layout></ProtectedRoute>} />
-     </Routes>
+      <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin']}><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><StudentDashboard /></Layout></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><Layout><Settings /></Layout></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute allowedRoles={['admin', 'student']}><Layout><Profile /></Layout></ProtectedRoute>} />
+    </Routes>
   );
 };
 

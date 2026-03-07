@@ -3,31 +3,55 @@ export type Role = 'admin' | 'student';
 export type TransactionType = 'deposit' | 'withdrawal';
 
 export interface User {
-  id: string; 
+  id: string;
   name: string;
   username: string;
   role: Role;
+  address?: string;
+  schoolCollege?: string;
+  className?: string;
+  adNo?: string;
+  phoneNumber?: string;
+  fullName?: string;
+  pincode?: string;
+  profilePicture?: string;
 }
 
 export interface Admin {
-  _id?: string; 
+  _id?: string;
   id?: number | string;
   name: string;
   username: string;
   password?: string;
   role: 'admin';
   createdAt?: string;
+  address?: string;
+  schoolCollege?: string;
+  className?: string;
+  adNo?: string;
+  phoneNumber?: string;
+  fullName?: string;
+  pincode?: string;
+  profilePicture?: string;
 }
 
 export interface Student {
   _id?: string;
-  id?: number | string; 
+  id?: number | string;
   name: string;
   username: string;
   password?: string;
   accountBalance: number;
   dueDate?: string;
   createdAt: string;
+  address?: string;
+  schoolCollege?: string;
+  className?: string;
+  adNo?: string;
+  phoneNumber?: string;
+  fullName?: string;
+  pincode?: string;
+  profilePicture?: string;
 }
 
 export interface ClassEntity {
@@ -50,7 +74,7 @@ export interface SpecialFund {
 export interface Transaction {
   _id?: string;
   id?: number | string;
-  entityId: number | string; 
+  entityId: number | string;
   entityType: 'student' | 'class' | 'special';
   amount: number;
   type: TransactionType;
@@ -60,6 +84,14 @@ export interface Transaction {
   entityName?: string;
 }
 
+export interface AppNotification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  message: string;
+  date: string;
+  read: boolean;
+}
+
 export interface FinanceState {
   currentUser: User | null;
   admins: Admin[];
@@ -67,11 +99,12 @@ export interface FinanceState {
   classes: ClassEntity[];
   specialFunds: SpecialFund[];
   transactions: Transaction[];
+  notifications: AppNotification[];
   isLoading: boolean;
 }
 
 export interface FinanceContextType extends FinanceState {
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; role?: Role }>;
   logout: () => void;
   addAdmin: (name: string, username: string, password: string) => Promise<void>;
   updateAdminPassword: (id: number | string, newPassword: string) => Promise<void>;
@@ -81,6 +114,8 @@ export interface FinanceContextType extends FinanceState {
   updateStudentPassword: (id: number | string, newPassword: string) => Promise<void>;
   updateStudentUsername: (id: number | string, newUsername: string) => Promise<void>;
   updateStudent: (id: number | string, updates: Partial<Student>) => Promise<void>;
+  updateAdmin: (id: number | string, updates: Partial<Admin>) => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   deleteStudent: (id: number | string) => Promise<void>;
   addClass: (name: string) => Promise<void>;
   deleteClass: (id: number | string) => Promise<void>;
@@ -97,4 +132,8 @@ export interface FinanceContextType extends FinanceState {
     reason: string
   ) => Promise<void>;
   formatCurrency: (amount: number) => string;
+  addNotification: (type: AppNotification['type'], message: string) => void;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  clearNotifications: () => void;
 }

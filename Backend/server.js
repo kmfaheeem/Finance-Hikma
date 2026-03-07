@@ -29,7 +29,7 @@ console.log("Connecting to MongoDB...");
 mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => {
-      console.error('MongoDB Connection Error:', err);
+    console.error('MongoDB Connection Error:', err);
   });
 
 // --- SCHEMAS ---
@@ -37,8 +37,16 @@ mongoose.connect(MONGO_URI)
 const AdminSchema = new mongoose.Schema({
   name: String,
   username: { type: String, unique: true },
-  password: String, 
-  role: { type: String, default: 'admin' }
+  password: String,
+  role: { type: String, default: 'admin' },
+  fullName: String,
+  phoneNumber: String,
+  adNo: String,
+  schoolCollege: String,
+  className: String,
+  address: String,
+  pincode: String,
+  profilePicture: String
 });
 
 const StudentSchema = new mongoose.Schema({
@@ -47,7 +55,15 @@ const StudentSchema = new mongoose.Schema({
   password: String,
   accountBalance: { type: Number, default: 0 },
   dueDate: String,
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  fullName: String,
+  phoneNumber: String,
+  adNo: String,
+  schoolCollege: String,
+  className: String,
+  address: String,
+  pincode: String,
+  profilePicture: String
 });
 
 const ClassSchema = new mongoose.Schema({
@@ -64,7 +80,7 @@ const SpecialFundSchema = new mongoose.Schema({
 });
 
 const TransactionSchema = new mongoose.Schema({
-  entityId: String, 
+  entityId: String,
   entityType: String, // 'student', 'class', 'special'
   amount: Number,
   type: String, // 'deposit', 'withdrawal'
@@ -105,17 +121,17 @@ app.post('/api/login', async (req, res) => {
 
     const admin = await Admin.findOne({ username, password });
     if (admin) {
-      return res.json({ 
-        success: true, 
-        user: { id: admin._id, name: admin.name, username: admin.username, role: 'admin' } 
+      return res.json({
+        success: true,
+        user: { ...admin.toObject(), id: admin._id, role: 'admin' }
       });
     }
 
     const student = await Student.findOne({ username, password });
     if (student) {
-      return res.json({ 
-        success: true, 
-        user: { id: student._id, name: student.name, username: student.username, role: 'student' } 
+      return res.json({
+        success: true,
+        user: { ...student.toObject(), id: student._id, role: 'student' }
       });
     }
 
@@ -155,7 +171,7 @@ app.put('/api/students/:id', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 app.delete('/api/students/:id', async (req, res) => {
-  try { await Student.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  try { await Student.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -167,7 +183,7 @@ app.post('/api/classes', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 app.delete('/api/classes/:id', async (req, res) => {
-  try { await Class.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  try { await Class.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -179,7 +195,7 @@ app.post('/api/special-funds', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 app.delete('/api/special-funds/:id', async (req, res) => {
-  try { await SpecialFund.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  try { await SpecialFund.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -197,7 +213,7 @@ app.put('/api/admins/:id', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 app.delete('/api/admins/:id', async (req, res) => {
-  try { await Admin.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); } 
+  try { await Admin.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -215,24 +231,24 @@ app.post('/api/transactions', async (req, res) => {
     if (entityType === 'student') {
       const student = await Student.findById(entityId);
       if (student) {
-        student.accountBalance = type === 'deposit' 
-          ? student.accountBalance + numAmount 
+        student.accountBalance = type === 'deposit'
+          ? student.accountBalance + numAmount
           : student.accountBalance - numAmount;
         await student.save();
       }
     } else if (entityType === 'class') {
       const classEntity = await Class.findById(entityId);
       if (classEntity) {
-        classEntity.accountBalance = type === 'deposit' 
-          ? classEntity.accountBalance + numAmount 
+        classEntity.accountBalance = type === 'deposit'
+          ? classEntity.accountBalance + numAmount
           : classEntity.accountBalance - numAmount;
         await classEntity.save();
       }
     } else if (entityType === 'special') {
       const specialFund = await SpecialFund.findById(entityId);
       if (specialFund) {
-        specialFund.accountBalance = type === 'deposit' 
-          ? specialFund.accountBalance + numAmount 
+        specialFund.accountBalance = type === 'deposit'
+          ? specialFund.accountBalance + numAmount
           : specialFund.accountBalance - numAmount;
         await specialFund.save();
       }

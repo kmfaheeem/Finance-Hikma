@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useFinance } from '../../context/FinanceContext';
 import { Card } from '../../components/ui/Card';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Printer } from 'lucide-react';
+import { Printer, Calendar, Filter, X } from 'lucide-react';
 
 export const Reports: React.FC = () => {
   const { transactions, students, classes, specialFunds, currentUser, formatCurrency } = useFinance();
@@ -12,28 +12,42 @@ export const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // Quick date handlers
+  const setThisMonth = () => {
+    const date = new Date();
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+    setStartDate(firstDay);
+    setEndDate(lastDay);
+  };
+
+  const clearDates = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
   // Filter logic
   const filteredTransactions = useMemo(() => {
     let data = transactions.filter(t => t.entityType === reportType);
 
     // If logged in as student, restrict view to self
     if (currentUser?.role === 'student') {
-       if (reportType === 'student') {
-         // Find the student record that matches the logged-in username
-         const studentRecord = students.find(s => s.username === currentUser.username);
-         if (studentRecord) {
-           data = data.filter(t => String(t.entityId) === String(studentRecord.id) || t.entityId === studentRecord._id);
-         } else {
-            data = [];
-         }
-       } else {
-         // Students can see all class and special funds (public transparency)
-       }
-    } else {
-        // Admin filters
-        if (filterId !== 'all') {
-            data = data.filter(t => String(t.entityId) === filterId || t.entityId === filterId);
+      if (reportType === 'student') {
+        // Find the student record that matches the logged-in username
+        const studentRecord = students.find(s => s.username === currentUser.username);
+        if (studentRecord) {
+          data = data.filter(t => String(t.entityId) === String(studentRecord.id) || t.entityId === studentRecord._id);
+        } else {
+          data = [];
         }
+      } else {
+        // Students can see all class and special funds (public transparency)
+      }
+    } else {
+      // Admin filters
+      if (filterId !== 'all') {
+        data = data.filter(t => String(t.entityId) === filterId || t.entityId === filterId);
+      }
     }
 
     // Date Range Filtering
@@ -98,64 +112,89 @@ export const Reports: React.FC = () => {
           <p className="text-slate-500">Detailed transaction history and statements.</p>
         </div>
         <div className="flex items-center gap-2 no-print">
-           <button 
-             onClick={handlePrint}
-             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
-           >
-             <Printer size={16} />
-             Print / Save as PDF
-           </button>
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
+          >
+            <Printer size={16} />
+            Print / Save as PDF
+          </button>
         </div>
       </div>
 
       <Card className="print:shadow-none print:border-none print:p-0">
         {/* Filters Toolbar - Hidden on print */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100 no-print">
-          {/* Changed grid columns to accommodate extra date field */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <SearchableSelect
-                label="Report Type"
-                options={reportTypeOptions}
-                value={reportType}
-                onChange={(value) => {
-                  setReportType(value as 'student' | 'class' | 'special');
+        <div className="mb-6 no-print border border-slate-200 rounded-lg bg-white shadow-sm">
+          {/* Tabs for Report Type */}
+          <div className="flex border-b border-slate-200 bg-slate-50 rounded-t-lg overflow-hidden">
+            {reportTypeOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setReportType(option.value as 'student' | 'class' | 'special');
                   setFilterId('all');
                 }}
-              />
-            </div>
+                className={`flex-1 py-3 px-4 text-sm font-medium text-center transition-colors ${reportType === option.value
+                  ? 'bg-white border-b-2 border-blue-600 text-blue-600'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                  }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
 
-            {currentUser?.role === 'admin' && (
-                <div>
+          <div className="p-4 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-end gap-4">
+              {/* Entity Filter */}
+              <div className="flex-1">
+                {currentUser?.role === 'admin' ? (
                   <SearchableSelect
-                    label="Filter by Entity"
+                    label={`Filter by ${reportTypeOptions.find(o => o.value === reportType)?.label.split(' ')[0]}`}
                     options={entityOptions}
                     value={filterId}
                     onChange={setFilterId}
                   />
-                </div>
-            )}
+                ) : (
+                  <div className="block text-sm font-medium text-slate-700 mb-1">
+                    Your Report
+                  </div>
+                )}
+              </div>
 
-            {/* Start Date Input */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
-              <input 
-                type="date" 
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              {/* Date Filters */}
+              <div className="flex-1 flex flex-col sm:flex-row items-end gap-3">
+                <div className="w-full sm:w-auto flex-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><Calendar size={14} /> From Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="w-full sm:w-auto flex-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><Calendar size={14} /> To Date</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* End Date Input */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
-              <input 
-                type="date" 
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Quick Actions */}
+            <div className="flex justify-end items-center gap-2 pt-2 border-t border-slate-100">
+              <button onClick={setThisMonth} className="text-xs px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 font-medium transition-colors">
+                This Month
+              </button>
+              {(startDate || endDate || filterId !== 'all') && (
+                <button onClick={() => { clearDates(); setFilterId('all'); }} className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 font-medium transition-colors flex items-center gap-1">
+                  <X size={12} /> Clear Filters
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -192,15 +231,13 @@ export const Reports: React.FC = () => {
                       {t.reason}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                        t.type === 'deposit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      } print:bg-transparent print:text-black print:border print:border-slate-300 print:px-1`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${t.type === 'deposit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        } print:bg-transparent print:text-black print:border print:border-slate-300 print:px-1`}>
                         {t.type}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 text-right font-bold ${
-                      t.type === 'deposit' ? 'text-emerald-600' : 'text-red-600'
-                    } print:text-black`}>
+                    <td className={`px-4 py-3 text-right font-bold ${t.type === 'deposit' ? 'text-emerald-600' : 'text-red-600'
+                      } print:text-black`}>
                       {t.type === 'deposit' ? '+' : '-'}{formatCurrency(t.amount)}
                     </td>
                   </tr>
@@ -219,7 +256,7 @@ export const Reports: React.FC = () => {
             )}
           </table>
         </div>
-        
+
         {/* Print Footer */}
         <div className="hidden print:block mt-8 text-center text-xs text-slate-400">
           <p>Generated by Hikma-Finance on {new Date().toLocaleDateString()}</p>

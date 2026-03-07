@@ -3,15 +3,266 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Your custom CSS below */
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@layer base {
+  :root {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: #ffffff;
+    color: #0f172a;
+    overflow-x: hidden;
+  }
+
+  /* Render a beautiful iOS Liquid White Aurora Gradient as the background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: -10%;
+    width: 70vw;
+    height: 70vw;
+    background: radial-gradient(circle, rgba(226, 232, 240, 0.4) 0%, rgba(255, 255, 255, 0) 70%);
+    filter: blur(90px);
+    z-index: -1;
+    animation: drift 15s ease-in-out infinite alternate;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(203, 213, 225, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+    filter: blur(90px);
+    z-index: -1;
+    animation: drift2 20s ease-in-out infinite alternate;
+  }
+
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  .bg-blue-50,
+  .bg-gray-50,
+  .bg-gray-100 {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 15px 50px -10px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .bg-slate-900 {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    border-right: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  /* Turn dark mode backgrounds into glassy elements too */
+  .bg-slate-800 {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .bg-blue-600 {
+    background-color: rgba(59, 130, 246, 0.8) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    color: #fff !important;
+    /* Keep buttons text white for contrast */
+  }
+
+  .bg-blue-500 {
+    background-color: rgba(59, 130, 246, 0.6) !important;
+    color: #fff !important;
+  }
+
+  /* Elegant Typography Overrides - Set everything to Black/Dark Grey */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #0f172a !important;
+    /* Slate 900 */
+    letter-spacing: -0.02em;
+  }
+
+
+  .text-slate-800,
+  .text-slate-900,
+  .text-black,
+  .text-gray-900 {
+    color: #0f172a !important;
+  }
+
+  .text-slate-600,
+  .text-slate-500,
+  .text-gray-600,
+  .text-gray-500 {
+    color: #475569 !important;
+  }
+
+  .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+
+  .text-slate-300 {
+    color: #cbd5e1 !important;
+  }
+
+  /* Keep Button Text White */
+  button span,
+  button p,
+  button .text-white {
+    color: #fff !important;
+  }
+
+  /* Sidebar styling fixes */
+  aside button {
+    color: inherit;
+  }
+
+  /* Table Customizations for Glassy look */
+  table th {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    font-weight: 600 !important;
+    backdrop-filter: blur(10px);
+  }
+
+  table td {
+    color: #334155 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  }
+
+  tbody tr:hover {
+    background-color: rgba(248, 250, 252, 0.6) !important;
+  }
+
+  /* Inputs, Selects, and Textareas */
+  input,
+  select,
+  textarea {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 16px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.3s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+  }
+
+  input::placeholder,
+  select::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  /* Universal Rounded Corners for iOS 26 Vibe */
+  .rounded-lg,
+  .rounded-md,
+  .rounded-xl,
+  .rounded-2xl {
+    border-radius: 24px !important;
+  }
+
+  /* Buttons extra pill shape */
+  button {
+    border-radius: 9999px !important;
+  }
+
+  /* Borders */
+  .border-slate-200,
+  .border-gray-200,
+  .border-slate-800,
+  .border-slate-300 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Dashboard Cards or general layout tweaks */
+  .shadow-md,
+  .shadow-sm,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Universal Animations & Hover Shadows for all interactive items */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  .bg-white,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  button:hover,
+  a:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .bg-white:hover,
+  .bg-slate-50:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.8) !important;
+  }
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+/* Animations for Aurora */
+@keyframes drift {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+
+  100% {
+    transform: translateY(-40px) translateX(60px) scale(1.1);
+  }
+}
+
+@keyframes drift2 {
+  0% {
+    transform: translateY(0) translateX(0) scale(1.1);
+  }
+
+  100% {
+    transform: translateY(-80px) translateX(-50px) scale(1);
+  }
+}
+
+/* Base custom aurora element if needed */
+.aurora-center {
+  position: fixed;
+  top: 30%;
+  left: 40%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(0, 0, 0, 0) 60%);
+  filter: blur(100px);
+  z-index: -1;
+  animation: drift 18s ease-in-out infinite alternate-reverse;
 }

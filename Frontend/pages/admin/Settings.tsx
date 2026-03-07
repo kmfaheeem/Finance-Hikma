@@ -6,22 +6,22 @@ import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect'; // Import SearchableSelect
 import { UserPlus, Users, Trash2, PlusCircle, Key, UserCog, ShieldCheck, ShieldAlert } from 'lucide-react';
 
-export const Actions: React.FC = () => {
-  const { 
-    addStudent, deleteStudent, 
-    addClass, deleteClass, 
-    updateStudentPassword, updateStudentUsername, 
+export const Settings: React.FC = () => {
+  const {
+    addStudent, deleteStudent,
+    addClass, deleteClass,
+    updateStudentPassword, updateStudentUsername,
     addAdmin, updateAdminPassword, updateAdminUsername, deleteAdmin,
-    students, classes, admins, isLoading 
+    students, classes, admins, isLoading
   } = useFinance();
-  
+
   const { showToast } = useToast(); // Initialize Toast
 
   // --- Student Forms State ---
   const [studentName, setStudentName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const [className, setClassName] = useState('');
   const [deleteStudentId, setDeleteStudentId] = useState('');
   const [deleteClassId, setDeleteClassId] = useState('');
@@ -88,8 +88,8 @@ export const Actions: React.FC = () => {
   const handleDeleteStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deleteStudentId) return showToast('Please select a student', 'error');
-    
-    if(confirm('Are you sure? This action cannot be undone.')) {
+
+    if (confirm('Are you sure? This action cannot be undone.')) {
       try {
         await deleteStudent(deleteStudentId);
         setDeleteStudentId('');
@@ -104,7 +104,7 @@ export const Actions: React.FC = () => {
     e.preventDefault();
     if (!deleteClassId) return showToast('Please select a class', 'error');
 
-    if(confirm('Are you sure? This action cannot be undone.')) {
+    if (confirm('Are you sure? This action cannot be undone.')) {
       try {
         await deleteClass(deleteClassId);
         setDeleteClassId('');
@@ -117,7 +117,7 @@ export const Actions: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(pwStudentId && newPassword) {
+    if (pwStudentId && newPassword) {
       try {
         await updateStudentPassword(pwStudentId, newPassword);
         setPwStudentId('');
@@ -131,7 +131,7 @@ export const Actions: React.FC = () => {
 
   const handleChangeUsername = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(userStudentId && newUsername) {
+    if (userStudentId && newUsername) {
       try {
         await updateStudentUsername(userStudentId, newUsername);
         setUserStudentId('');
@@ -159,7 +159,7 @@ export const Actions: React.FC = () => {
 
   const handleChangeAdminPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(pwAdminId && newAdminPassword) {
+    if (pwAdminId && newAdminPassword) {
       try {
         await updateAdminPassword(pwAdminId, newAdminPassword);
         setPwAdminId('');
@@ -173,7 +173,7 @@ export const Actions: React.FC = () => {
 
   const handleChangeAdminUsername = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(userAdminId && newAdminUsername) {
+    if (userAdminId && newAdminUsername) {
       try {
         await updateAdminUsername(userAdminId, newAdminUsername);
         setUserAdminId('');
@@ -189,7 +189,7 @@ export const Actions: React.FC = () => {
     e.preventDefault();
     if (!deleteAdminId) return showToast('Please select an admin', 'error');
 
-    if(confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
       try {
         await deleteAdmin(deleteAdminId);
         setDeleteAdminId('');
@@ -203,14 +203,14 @@ export const Actions: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Administrative Actions</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="text-slate-500">Manage students, classes, and system administrators.</p>
       </div>
 
       {/* SECTION: Admin Management */}
       <div className="border-b border-slate-200 pb-8">
         <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <ShieldCheck className="text-slate-800" /> 
+          <ShieldCheck className="text-slate-800" />
           Admin Management
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,17 +221,17 @@ export const Actions: React.FC = () => {
               <h3 className="font-semibold">Add New Admin</h3>
             </div>
             <form onSubmit={handleAddAdmin} className="space-y-3">
-              <input 
+              <input
                 type="text" required value={adminName} onChange={e => setAdminName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="Name"
+                className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white placeholder-slate-400" placeholder="Name"
               />
-              <input 
+              <input
                 type="text" required value={adminUser} onChange={e => setAdminUser(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="Username"
+                className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white placeholder-slate-400" placeholder="Username"
               />
-              <input 
+              <input
                 type="password" required value={adminPass} onChange={e => setAdminPass(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="Password"
+                className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white placeholder-slate-400" placeholder="Password"
               />
               <Button type="submit" variant="secondary" className="w-full text-sm">Create Admin</Button>
             </form>
@@ -239,22 +239,22 @@ export const Actions: React.FC = () => {
 
           {/* Edit Admin Password */}
           <Card className="bg-slate-50 border-slate-200">
-             <div className="flex items-center gap-3 mb-4 text-slate-700">
+            <div className="flex items-center gap-3 mb-4 text-slate-700">
               <Key size={20} />
               <h3 className="font-semibold">Admin Password</h3>
             </div>
             <form onSubmit={handleChangeAdminPassword} className="space-y-3">
               {/* Searchable Admin Select */}
-              <SearchableSelect 
+              <SearchableSelect
                 placeholder="Select Admin..."
                 value={pwAdminId}
                 onChange={setPwAdminId}
                 options={adminOptions}
                 required
               />
-              <input 
+              <input
                 type="password" required value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="New Password"
+                className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white placeholder-slate-400" placeholder="New Password"
               />
               <Button type="submit" variant="outline" className="w-full text-sm">Update Password</Button>
             </form>
@@ -262,22 +262,22 @@ export const Actions: React.FC = () => {
 
           {/* Edit Admin Username */}
           <Card className="bg-slate-50 border-slate-200">
-             <div className="flex items-center gap-3 mb-4 text-slate-700">
+            <div className="flex items-center gap-3 mb-4 text-slate-700">
               <UserCog size={20} />
               <h3 className="font-semibold">Admin Username</h3>
             </div>
             <form onSubmit={handleChangeAdminUsername} className="space-y-3">
               {/* Searchable Admin Select */}
-              <SearchableSelect 
+              <SearchableSelect
                 placeholder="Select Admin..."
                 value={userAdminId}
                 onChange={setUserAdminId}
                 options={adminOptions}
                 required
               />
-              <input 
+              <input
                 type="text" required value={newAdminUsername} onChange={e => setNewAdminUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="New Username"
+                className="w-full px-3 py-2 border border-slate-300 rounded text-sm text-slate-900 bg-white placeholder-slate-400" placeholder="New Username"
               />
               <Button type="submit" variant="outline" className="w-full text-sm">Update Username</Button>
             </form>
@@ -285,13 +285,13 @@ export const Actions: React.FC = () => {
 
           {/* Delete Admin */}
           <Card className="bg-slate-50 border-red-200">
-             <div className="flex items-center gap-3 mb-4 text-red-700">
+            <div className="flex items-center gap-3 mb-4 text-red-700">
               <ShieldAlert size={20} />
               <h3 className="font-semibold">Delete Admin</h3>
             </div>
             <form onSubmit={handleDeleteAdmin} className="space-y-3">
               {/* Searchable Admin Select */}
-              <SearchableSelect 
+              <SearchableSelect
                 placeholder="Select Admin..."
                 value={deleteAdminId}
                 onChange={setDeleteAdminId}
@@ -308,8 +308,8 @@ export const Actions: React.FC = () => {
       {/* SECTION: Student & Class Management */}
       <div>
         <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-           <Users className="text-slate-800" />
-           Student & Class Management
+          <Users className="text-slate-800" />
+          Student & Class Management
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Add Student */}
@@ -321,9 +321,9 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleAddStudent} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   value={studentName}
                   onChange={(e) => setStudentName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -332,9 +332,9 @@ export const Actions: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -343,9 +343,9 @@ export const Actions: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Initial Password</label>
-                <input 
-                  type="password" 
-                  required 
+                <input
+                  type="password"
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -365,9 +365,9 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleAddClass} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Class Name</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -388,7 +388,7 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
                 {/* Searchable Student Select */}
-                <SearchableSelect 
+                <SearchableSelect
                   label="Select Student"
                   placeholder="Select Student..."
                   value={pwStudentId}
@@ -399,9 +399,9 @@ export const Actions: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
-                <input 
-                  type="password" 
-                  required 
+                <input
+                  type="password"
+                  required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -421,7 +421,7 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleChangeUsername} className="space-y-4">
               <div>
                 {/* Searchable Student Select */}
-                <SearchableSelect 
+                <SearchableSelect
                   label="Select Student"
                   placeholder="Select Student..."
                   value={userStudentId}
@@ -432,9 +432,9 @@ export const Actions: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">New Username</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -454,7 +454,7 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleDeleteStudent} className="space-y-4">
               <div>
                 {/* Searchable Student Select */}
-                <SearchableSelect 
+                <SearchableSelect
                   label="Select Student"
                   placeholder="Select Student..."
                   value={deleteStudentId}
@@ -476,7 +476,7 @@ export const Actions: React.FC = () => {
             <form onSubmit={handleDeleteClass} className="space-y-4">
               <div>
                 {/* Searchable Class Select */}
-                <SearchableSelect 
+                <SearchableSelect
                   label="Select Class"
                   placeholder="Select Class..."
                   value={deleteClassId}
